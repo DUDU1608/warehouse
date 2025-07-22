@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add Purchase</title>
+    <style>
+        body {
+            background: #f2f4f8;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0; padding: 0;
+        }
+        .container {
+            max-width: 670px;
+            margin: 45px auto 0 auto;
+            background: #fff;
+            padding: 40px 36px 32px 36px;
+            border-radius: 18px;
+            box-shadow: 0 2px 32px rgba(60,72,95,0.13);
+        }
+        h1 { text-align: center; color: #1b3660; margin-bottom: 28px; font-size: 1.45rem; font-weight: 600; }
+        form { display: flex; flex-direction: column; gap: 18px; }
+        .grid-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 8px;
+        }
+        .grid-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 8px;
+        }
+        label {
+            font-size: 1rem;
+            color: #274c97;
+            margin-bottom: 3px;
+            display: block;
+        }
+        input, select {
+            padding: 10px; font-size: 1rem; border: 1.3px solid #d1dbe8; border-radius: 7px;
+            background: #f7faff; outline: none; transition: border 0.14s; width: 100%;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus { border-color: #3267d6; background: #fff; }
+        .readonly { background: #e5eaf2; }
+        button[type="submit"] {
+            margin-top: 16px; width: 100%; padding: 13px 0; font-size: 1.09rem; color: #fff;
+            background: linear-gradient(90deg, #3267d6 0%, #49c0e7 100%);
+            border: none; border-radius: 8px; font-weight: 500; cursor: pointer;
+            transition: background 0.15s, transform 0.12s;
+        }
+        button[type="submit"]:hover { background: linear-gradient(90deg, #274c97 0%, #319fc5 100%); transform: scale(1.025); }
+        .back-link { display: inline-block; margin-top: 18px; font-size: 15px; color: #355ba2; text-decoration: none; transition: color 0.15s; }
+        .back-link:hover { color: #1b3660; text-decoration: underline; }
+        @media (max-width: 950px) {
+            .container { max-width: 99vw; padding: 7vw 2vw; }
+        }
+        @media (max-width: 750px) {
+            .grid-row, .grid-row-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.sellerData = /*[[${sellerData}]]*/ [];
+        /*]]>*/
+
+        function onSellerNameChange() {
+            var sellerName = document.getElementById('seller').value;
+            var mobileInput = document.getElementById('mobile');
+            var match = window.sellerData.find(s => s.name === sellerName);
+            if (match) {
+                mobileInput.value = match.mobile;
+            } else {
+                mobileInput.value = '';
+            }
+        }
+
+        function recalculateFields() {
+            let qty = parseFloat(document.getElementById("quantity").value) || 0;
+            let reduction = parseFloat(document.getElementById("reduction").value) || 0;
+            let rate = parseFloat(document.getElementById("rate").value) || 0;
+            let handling = parseFloat(document.getElementById("handling").value) || 0;
+
+            let netQty = qty - reduction;
+            if (netQty < 0) netQty = 0;
+            document.getElementById("netQty").value = netQty;
+
+            let cost = netQty * rate;
+            document.getElementById("cost").value = cost;
+
+            let totalCost = cost - handling;
+            document.getElementById("totalCost").value = totalCost;
+        }
+    </script>
+</head>
+<body>
+<div class="container">
+    <h1>Add Purchase</h1>
+    <form th:action="@{/seller/add-purchase}" method="post" th:object="${purchase}">
+        <div class="grid-row-2">
+            <div>
+                <label for="date">Date</label>
+                <input type="date" id="date" th:field="*{date}" required>
+            </div>
+            <div>
+                <label for="rstNo">RST No</label>
+                <input type="text" id="rstNo" th:field="*{rstNo}" maxlength="20" required>
+            </div>
+        </div>
+        <div class="grid-row">
+            <div>
+                <label for="warehouse">Warehouse</label>
+                <input list="warehouseList" id="warehouse" th:field="*{warehouse}" autocomplete="off" required>
+                <datalist id="warehouseList">
+                    <option th:each="wh : ${warehouseList}" th:value="${wh}"></option>
+                </datalist>
+            </div>
+            <div>
+                <label for="seller">Seller</label>
+                <input list="sellerList" id="seller" th:field="*{seller}" oninput="onSellerNameChange()" autocomplete="off" required>
+                <datalist id="sellerList">
+                    <option th:each="s : ${sellerData}" th:value="${s.name}"></option>
+                </datalist>
+            </div>
+            <div>
+                <label for="mobile">Mobile</label>
+                <input type="text" id="mobile" th:field="*{mobile}" maxlength="10" readonly>
+            </div>
+        </div>
+        <div class="grid-row">
+            <div>
+                <label for="commodity">Commodity</label>
+                <select id="commodity" th:field="*{commodity}" required>
+                    <option value="">Select</option>
+                    <option value="Wheat">Wheat</option>
+                    <option value="Maize">Maize</option>
+                    <option value="Paddy">Paddy</option>
+                </select>
+            </div>
+            <div>
+                <label for="quantity">Quantity</label>
+                <input type="number" id="quantity" th:field="*{quantity}" step="0.01" min="0" oninput="recalculateFields()" required>
+            </div>
+            <div>
+                <label for="reduction">Reduction</label>
+                <input type="number" id="reduction" th:field="*{reduction}" step="0.01" min="0" oninput="recalculateFields()">
+            </div>
+            <div>
+                <label for="netQty">Net Qty</label>
+                <input type="number" id="netQty" th:field="*{netQty}" step="0.01" class="readonly" readonly>
+            </div>
+        </div>
+        <div class="grid-row">
+            <div>
+                <label for="rate">Rate</label>
+                <input type="number" id="rate" th:field="*{rate}" step="0.01" min="0" oninput="recalculateFields()" required>
+            </div>
+            <div>
+                <label for="cost">Cost</label>
+                <input type="number" id="cost" th:field="*{cost}" step="0.01" class="readonly" readonly>
+            </div>
+            <div>
+                <label for="handling">Handling</label>
+                <input type="number" id="handling" th:field="*{handling}" step="0.01" min="0" oninput="recalculateFields()">
+            </div>
+            <div>
+                <label for="totalCost">Total Cost</label>
+                <input type="number" id="totalCost" th:field="*{totalCost}" step="0.01" class="readonly" readonly>
+            </div>
+        </div>
+        <div class="grid-row-2">
+            <div>
+                <label for="quality">Quality</label>
+                <select id="quality" th:field="*{quality}">
+                    <option value="">Select</option>
+                    <option value="Good">Good</option>
+                    <option value="BD">BD</option>
+                </select>
+            </div>
+        </div>
+        <button type="submit">Add Purchase</button>
+    </form>
+    <a href="/seller" class="back-link">&larr; Back to Seller Module</a>
+</div>
+</body>
+</html>
+

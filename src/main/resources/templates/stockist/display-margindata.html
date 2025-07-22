@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Display Margin Data</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fa; }
+        .container { max-width: 98vw; margin: 32px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 20px #b6c2e7; padding: 26px; }
+        h2 { color: #274c97; text-align: center; margin-bottom: 20px; }
+        .actions, .filters { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .filters select, .filters input { padding: 5px; border-radius: 5px; border: 1px solid #a5b2cc; }
+        .actions button { padding: 7px 14px; border-radius: 6px; border: none; background: #274c97; color: #fff; cursor: pointer; }
+        .actions button:hover { background: #143263; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { border: 1px solid #dde3ef; padding: 7px 6px; text-align: center; }
+        th { background: #e7edf8; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .edit-btn, .save-btn, .cancel-btn { background: #2e86c1; color: #fff; border: none; padding: 3px 9px; border-radius: 4px; cursor: pointer; margin: 1px 2px;}
+        .save-btn { background: #27ae60; }
+        .cancel-btn { background: #c0392b; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Margin Data</h2>
+
+    <!-- FILTERS -->
+    <form class="filters" th:action="@{/stockist/display-margindata}" method="get">
+        <input type="text" name="stockistName" th:value="${filterStockistName}" placeholder="Stockist Name (autocomplete)">
+        <input type="text" name="warehouse" th:value="${filterWarehouse}" placeholder="Warehouse">
+        <select name="commodity">
+            <option value="">All Commodities</option>
+            <option value="Wheat" th:selected="${filterCommodity == 'Wheat'}">Wheat</option>
+            <option value="Maize" th:selected="${filterCommodity == 'Maize'}">Maize</option>
+            <option value="Paddy" th:selected="${filterCommodity == 'Paddy'}">Paddy</option>
+        </select>
+        <input type="date" name="dateFrom" th:value="${filterDateFrom}">
+        <input type="date" name="dateTo" th:value="${filterDateTo}">
+        <button type="submit">Filter</button>
+    </form>
+
+    <!-- ACTION BUTTONS -->
+    <div class="actions">
+        <button type="button" onclick="bulkDelete()">Delete Selected</button>
+        <button type="button" onclick="exportExcel()">Export Excel</button>
+        <button type="button" onclick="exportPdf()">Export PDF</button>
+        <button type="button" onclick="document.getElementById('importFile').click()">Import Excel</button>
+        <input type="file" id="importFile" style="display:none" onchange="importExcel(this)">
+    </div>
+
+    <!-- TABLE -->
+    <form id="marginDataTableForm">
+        <table>
+            <thead>
+            <tr>
+                <th>Select</th>
+                <th>Edit</th>
+                <th>Date</th>
+                <th>Stockist Name</th>
+                <th>Commodity</th>
+                <th>Warehouse</th>
+                <th>Amount</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${marginDataList}" th:id="'row-' + ${m.id}">
+                <td><input type="checkbox" name="selectedIds" th:value="${m.id}"></td>
+                <td>
+                    <button type="button"
+                            th:id="'editBtn-' + ${m.id}"
+                            th:onclick="'enableEdit(' + ${m.id} + ')'"
+                            class="edit-btn">Edit</button>
+                    <button type="button"
+                            th:id="'saveBtn-' + ${m.id}"
+                            th:onclick="'saveRow(' + ${m.id} + ')'"
+                            class="save-btn" style="display:none;">Save</button>
+                    <button type="button"
+                            th:id="'cancelBtn-' + ${m.id}"
+                            th:onclick="'cancelEdit(' + ${m.id} + ')'"
+                            class="cancel-btn" style="display:none;">Cancel</button>
+                </td>
+
+                <td>
+                    <span th:text="${m.date}" th:id="'date-span-' + ${m.id}"></span>
+                    <input type="date" th:id="'date-input-' + ${m.id}" th:value="${m.date}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="${m.stockistName}" th:id="'stockistName-span-' + ${m.id}"></span>
+                    <input type="text" th:id="'stockistName-input-' + ${m.id}" th:value="${m.stockistName}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="${m.commodity}" th:id="'commodity-span-' + ${m.id}"></span>
+                    <select th:id="'commodity-input-' + ${m.id}" style="display:none;">
+                        <option value="Wheat" th:selected="${m.commodity == 'Wheat'}">Wheat</option>
+                        <option value="Maize" th:selected="${m.commodity == 'Maize'}">Maize</option>
+                        <option value="Paddy" th:selected="${m.commodity == 'Paddy'}">Paddy</option>
+                    </select>
+                </td>
+                <td>
+                    <span th:text="${m.warehouse}" th:id="'warehouse-span-' + ${m.id}"></span>
+                    <input type="text" th:id="'warehouse-input-' + ${m.id}" th:value="${m.warehouse}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="${m.amount}" th:id="'amount-span-' + ${m.id}"></span>
+                    <input type="number" th:id="'amount-input-' + ${m.id}" th:value="${m.amount}" step="0.01" style="display:none;">
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </form>
+
+    <a href="/stockist" style="display:block;margin-top:24px;text-align:left;">&larr; Back to Stockist Dashboard</a>
+</div>
+
+<script>
+    function enableEdit(id) {
+        document.getElementById('editBtn-' + id).style.display = 'none';
+        document.getElementById('saveBtn-' + id).style.display = '';
+        document.getElementById('cancelBtn-' + id).style.display = '';
+        ['date','stockistName','commodity','warehouse','amount'].forEach(function(field){
+            document.getElementById(field + '-span-' + id).style.display = 'none';
+            document.getElementById(field + '-input-' + id).style.display = '';
+        });
+    }
+    function cancelEdit(id) {
+        document.getElementById('editBtn-' + id).style.display = '';
+        document.getElementById('saveBtn-' + id).style.display = 'none';
+        document.getElementById('cancelBtn-' + id).style.display = 'none';
+        ['date','stockistName','commodity','warehouse','amount'].forEach(function(field){
+            document.getElementById(field + '-span-' + id).style.display = '';
+            document.getElementById(field + '-input-' + id).style.display = 'none';
+        });
+    }
+    function saveRow(id) {
+        let data = {
+            id: id,
+            date: document.getElementById('date-input-' + id).value,
+            stockistName: document.getElementById('stockistName-input-' + id).value,
+            commodity: document.getElementById('commodity-input-' + id).value,
+            warehouse: document.getElementById('warehouse-input-' + id).value,
+            amount: document.getElementById('amount-input-' + id).value
+        };
+        fetch('/stockist/update-margindata-inline', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+            .then(res => res.json())
+            .then(resp => {
+                if (resp.status === "ok") {
+                    Object.keys(data).forEach(function(field){
+                        if(field === "id") return;
+                        document.getElementById(field + '-span-' + id).textContent = data[field];
+                        document.getElementById(field + '-input-' + id).style.display = 'none';
+                        document.getElementById(field + '-span-' + id).style.display = '';
+                    });
+                    document.getElementById('editBtn-' + id).style.display = '';
+                    document.getElementById('saveBtn-' + id).style.display = 'none';
+                    document.getElementById('cancelBtn-' + id).style.display = 'none';
+                } else {
+                    alert("Error: " + resp.msg);
+                }
+            });
+    }
+
+    function exportExcel() {
+        window.location.href = "/stockist/export-margindata-excel";
+    }
+    function exportPdf() {
+        window.location.href = "/stockist/export-margindata-pdf";
+    }
+    function importExcel(input) {
+        if (input.files.length === 0) return;
+        let formData = new FormData();
+        formData.append("file", input.files[0]);
+        fetch("/stockist/import-margindata-excel", { method: "POST", body: formData })
+            .then(() => window.location.reload());
+    }
+    function bulkDelete() {
+        let checked = Array.from(document.querySelectorAll('input[name="selectedIds"]:checked')).map(cb => cb.value);
+        if (checked.length === 0) { alert("Select at least one row to delete."); return; }
+        if (!confirm("Delete selected records?")) return;
+        fetch('/stockist/delete-margindata', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(checked)
+        }).then(res => window.location.reload());
+    }
+</script>
+</body>
+</html>

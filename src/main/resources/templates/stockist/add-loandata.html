@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add Loan Data</title>
+    <style>
+        .container { max-width: 440px; margin: 48px auto; background: #fff; padding: 30px 22px; border-radius: 13px; box-shadow: 0 2px 16px #b6c2e7;}
+        h2 { color: #2a4687; text-align: center; margin-bottom: 18px;}
+        form label { font-weight: 600; margin-top: 8px; display: block;}
+        form input, form select { width: 100%; padding: 8px; border-radius: 7px; border: 1px solid #c5d1e7; margin-bottom: 14px;}
+        .btn { background: #274c97; color: #fff; border: none; border-radius: 7px; padding: 12px 0; width: 100%; font-size: 1rem; font-weight: 600;}
+        .success { color: #249755; text-align: center; margin-bottom: 12px; }
+        .back-link { display: block; margin-top: 18px; text-align: left; color: #274c97; text-decoration: none;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Add Loan Data</h2>
+    <div th:if="${success}" class="success">Loan data saved successfully!</div>
+    <form th:action="@{/stockist/add-loandata}" th:object="${loanData}" method="post">
+        <label>Date</label>
+        <input type="date" th:field="*{date}" required>
+
+        <label>Stockist Name</label>
+        <input type="text" th:field="*{stockistName}" list="stockist-list" autocomplete="off" required placeholder="Start typing...">
+        <datalist id="stockist-list">
+            <option th:each="s : ${stockistNames}" th:value="${s}"></option>
+        </datalist>
+
+        <label>Commodity</label>
+        <select th:field="*{commodity}">
+            <option value="Wheat">Wheat</option>
+            <option value="Maize">Maize</option>
+            <option value="Paddy">Paddy</option>
+        </select>
+
+        <label>Warehouse</label>
+        <input type="text" th:field="*{warehouse}" list="warehouse-list" autocomplete="off" required placeholder="Start typing...">
+        <datalist id="warehouse-list">
+            <option th:each="w : ${warehouses}" th:value="${w}"></option>
+        </datalist>
+
+        <label>Loan Type</label>
+        <select th:field="*{loanType}">
+            <option value="Cash">Cash</option>
+            <option value="Margin">Margin</option>
+        </select>
+
+        <label>Amount</label>
+        <input type="number" th:field="*{amount}" step="0.01" required>
+
+        <button class="btn" type="submit">Save Loan Data</button>
+    </form>
+    <a href="/stockist" class="back-link">&larr; Back to Stockist Dashboard</a>
+</div>
+</body>
+</html>

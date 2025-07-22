@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Display Payments</title>
+    <style>
+        body { background: #f2f4f8; font-family: 'Segoe UI', Arial, sans-serif; margin: 0;}
+        .container { max-width: 1120px; margin: 38px auto; background: #fff; border-radius: 18px; box-shadow: 0 2px 32px rgba(60,72,95,0.13); padding: 32px 28px;}
+        h2 { text-align: center; color: #274c97; margin-bottom: 24px; }
+        .filters { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap;}
+        .filters input, .filters select { padding: 6px 13px; border-radius: 7px; border: 1px solid #c6d0e7; font-size: 1rem; min-width: 120px;}
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 7px; border-bottom: 1px solid #e0e8f1; text-align: left; font-size: 0.98rem; }
+        th { background: #e8eef7; font-weight: 600; color: #22314e;}
+        tr:last-child td { border-bottom: none; }
+        .edit-btn, .save-btn, .cancel-btn, .del-btn {
+            padding: 5px 11px; border-radius: 6px; font-size: 0.93rem; margin-right: 3px; border: none; cursor: pointer;
+        }
+        .edit-btn { background: #49c0e7; color: #fff; }
+        .save-btn { background: #43c676; color: #fff;}
+        .cancel-btn { background: #f7b065; color: #fff;}
+        .del-btn { background: #f37e7e; color: #fff;}
+        .back-btn { margin-top:20px; background:#e8eef7; color:#23406e; padding:8px 20px; border-radius:8px; text-decoration:none; border:1px solid #d1dbe7; font-weight:500; }
+        .toolbar { display: flex; gap: 12px; margin-bottom: 10px; }
+        .toolbar button { background:#234fc6; color:#fff; border:none; border-radius:8px; padding:9px 18px; font-weight:500; }
+        .toolbar button.export-excel { background: #60cf7b; }
+        .toolbar button.export-pdf { background: #49c0e7; }
+        @media (max-width: 1200px) { .container { max-width: 99vw; } table, th, td { font-size: 13px; } }
+        @media (max-width: 650px) { .filters { flex-direction: column; gap: 7px;} }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.0/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h2>Payments</h2>
+    <!-- Filter Bar -->
+    <div class="filters">
+        <input type="text" id="filterName" placeholder="Name" oninput="filterTable()">
+        <input type="text" id="filterWarehouse" placeholder="Warehouse" oninput="filterTable()">
+        <select id="filterCommodity" onchange="filterTable()">
+            <option value="">All Commodities</option>
+            <option>Wheat</option>
+            <option>Maize</option>
+            <option>Paddy</option>
+        </select>
+        <input type="date" id="fromDate" onchange="filterTable()"> to
+        <input type="date" id="toDate" onchange="filterTable()">
+    </div>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button class="export-excel" onclick="exportToExcel()">Export Excel</button>
+        <button class="export-pdf" onclick="exportToPDF()">Export PDF</button>
+    </div>
+    <table id="paymentTable">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Name</th>
+            <th>Mobile</th>
+            <th>Warehouse</th>
+            <th>Commodity</th>
+            <th>Amount</th>
+            <th>Bank Reference</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="payment,iterStat : ${payments}" th:id="'row-'+${payment.id}" class="data-row">
+            <td th:text="${iterStat.count}"></td>
+            <td th:text="${payment.date}"></td>
+            <td th:text="${payment.name}"></td>
+            <td th:text="${payment.mobile}"></td>
+            <td th:text="${payment.warehouse}"></td>
+            <td th:text="${payment.commodity}"></td>
+            <td th:text="${payment.amount}"></td>
+            <td th:text="${payment.bankReference}"></td>
+            <td>
+                <button type="button" class="edit-btn" th:onclick="'enableEdit(' + ${payment.id} + ')'">Edit</button>
+                <button type="button" class="del-btn" th:onclick="'deletePayment(' + ${payment.id} + ')'">Delete</button>
+            </td>
+        </tr>
+        <!-- Inline editing row (hidden by default) -->
+        <tr th:each="payment,iterStat : ${payments}" th:id="'edit-'+${payment.id}" class="edit-row" style="display:none;">
+            <form th:action="@{/seller/update-payment/{id}(id=${payment.id})}" method="post">
+                <td th:text="${iterStat.count}"></td>
+                <td><input type="date" name="date" th:value="${payment.date}" required></td>
+                <td><input type="text" name="name" th:value="${payment.name}" required></td>
+                <td><input type="text" name="mobile" th:value="${payment.mobile}" required></td>
+                <td><input type="text" name="warehouse" th:value="${payment.warehouse}" required></td>
+                <td>
+                    <select name="commodity" required>
+                        <option value="Wheat" th:selected="${payment.commodity == 'Wheat'}">Wheat</option>
+                        <option value="Maize" th:selected="${payment.commodity == 'Maize'}">Maize</option>
+                        <option value="Paddy" th:selected="${payment.commodity == 'Paddy'}">Paddy</option>
+                    </select>
+                </td>
+                <td><input type="number" name="amount" th:value="${payment.amount}" step="0.01" required></td>
+                <td><input type="text" name="bankReference" th:value="${payment.bankReference}"></td>
+                <td>
+                    <button type="submit" class="save-btn">Save</button>
+                    <button type="button" class="cancel-btn" th:onclick="'cancelEdit(' + ${payment.id} + ')'">Cancel</button>
+                </td>
+            </form>
+        </tr>
+        <tr th:if="${#lists.isEmpty(payments)}">
+            <td colspan="9" style="text-align:center; color:#b5b7bb;">No payment records found.</td>
+        </tr>
+        </tbody>
+    </table>
+    <a href="/seller" class="back-btn">&larr; Back to Seller Dashboard</a>
+</div>
+<script>
+    // Filter table
+    function filterTable() {
+        let name = document.getElementById("filterName").value.toLowerCase();
+        let warehouse = document.getElementById("filterWarehouse").value.toLowerCase();
+        let commodity = document.getElementById("filterCommodity").value;
+        let fromDate = document.getElementById("fromDate").value;
+        let toDate = document.getElementById("toDate").value;
+        let rows = document.querySelectorAll("#paymentTable tbody tr.data-row");
+        rows.forEach(row => {
+            let show = true;
+            if (name && !row.children[2].innerText.toLowerCase().includes(name)) show = false;
+            if (warehouse && !row.children[4].innerText.toLowerCase().includes(warehouse)) show = false;
+            if (commodity && row.children[5].innerText !== commodity) show = false;
+            let rowDate = row.children[1].innerText;
+            if (fromDate && rowDate < fromDate) show = false;
+            if (toDate && rowDate > toDate) show = false;
+            row.style.display = show ? "" : "none";
+        });
+    }
+    function enableEdit(rowId) {
+        document.getElementById("row-"+rowId).style.display = "none";
+        document.getElementById("edit-"+rowId).style.display = "";
+    }
+    function cancelEdit(rowId) {
+        document.getElementById("row-"+rowId).style.display = "";
+        document.getElementById("edit-"+rowId).style.display = "none";
+    }
+    function deletePayment(id) {
+        if (!confirm("Delete this record?")) return;
+        fetch('/seller/delete-payment/' + id, { method: 'POST' }).then(r => {
+            document.getElementById('row-'+id).remove();
+            let editRow = document.getElementById('edit-'+id); if (editRow) editRow.remove();
+        });
+    }
+    // Excel export
+    function exportToExcel() {
+        var wb = XLSX.utils.table_to_book(document.getElementById('paymentTable'), {sheet:"Payments"});
+        XLSX.writeFile(wb, "payments.xlsx");
+    }
+    // PDF export
+    function exportToPDF() {
+        var doc = new jspdf.jsPDF('l', 'pt');
+        doc.text("Payment Records", 14, 20);
+        doc.autoTable({ html: '#paymentTable', startY: 28 });
+        doc.save('payments.pdf');
+    }
+</script>
+</body>
+</html>

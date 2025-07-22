@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>My Stock</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fa; }
+        .container { max-width: 980px; margin: 32px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 20px #b6c2e7; padding: 26px; }
+        h2 { color: #274c97; text-align: center; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { border: 1px solid #dde3ef; padding: 8px 6px; text-align: center; }
+        th { background: #e7edf8; }
+        tr:nth-child(even) { background: #f8fafc; }
+        a.back-link { display: block; margin-top: 24px; text-align: left; color: #274c97; text-decoration: none;}
+        a.back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>My Stock</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>RST No</th>
+            <th>Warehouse</th>
+            <th>Commodity</th>
+            <th>Quantity (kg)</th>
+            <th>Reduction (kg)</th>
+            <th>Net Qty (kg)</th>
+            <th>Rate</th>
+            <th>Cost</th>
+            <th>Handling</th>
+            <th>Total Cost</th>
+            <th>Quality</th>
+            <th>Kind of Stock</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="s : ${myStock}">
+            <td th:text="${s.date}"></td>
+            <td th:text="${s.rstNo}"></td>
+            <td th:text="${s.warehouse}"></td>
+            <td th:text="${s.commodity}"></td>
+            <td th:text="${s.quantity}"></td>
+            <td th:text="${s.reduction}"></td>
+            <td th:text="${s.netQty}"></td>
+            <td th:text="${s.rate}"></td>
+            <td th:text="${s.cost}"></td>
+            <td th:text="${s.handling}"></td>
+            <td th:text="${s.totalCost}"></td>
+            <td th:text="${s.quality}"></td>
+            <td th:text="${s.kindOfStock}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(myStock)}">
+            <td colspan="13">No stock data available.</td>
+        </tr>
+        </tbody>
+    </table>
+    <a href="/user" class="back-link">&larr; Back to Dashboard</a>
+</div>
+</body>
+</html>

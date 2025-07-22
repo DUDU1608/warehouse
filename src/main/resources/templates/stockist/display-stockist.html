@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>All Stockists</title>
+    <style>
+        body { background: #f4f6fa; font-family: 'Segoe UI', Arial, sans-serif; }
+        .container { max-width: 900px; margin: 54px auto; background: #fff; padding: 28px; border-radius: 13px; box-shadow: 0 2px 18px #c8d0e7; }
+        h2 { color: #274c97; text-align: center; margin-bottom: 22px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 18px;}
+        th, td { border: 1px solid #c8d0e7; padding: 8px 10px; text-align: left; }
+        th { background: #f2f7fc; color: #274c97; }
+        tr:nth-child(even) { background: #f7fafd; }
+        .back-link {
+            display: block;
+            text-align: left;
+            margin: 22px 0 0 2px;
+            color: #274c97;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+            color: #22314e;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>All Stockists</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Stockist Name</th>
+            <th>Mobile</th>
+            <th>Banking Name</th>
+            <th>Account Number</th>
+            <th>IFSC</th>
+            <th>Bank Name</th>
+            <th>Address</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="stockist : ${stockists}">
+            <td th:text="${stockist.stockistName}">Name</td>
+            <td th:text="${stockist.mobile}">Mobile</td>
+            <td th:text="${stockist.bankingName}">Banking Name</td>
+            <td th:text="${stockist.accountNumber}">Account No</td>
+            <td th:text="${stockist.ifsc}">IFSC</td>
+            <td th:text="${stockist.bankName}">Bank</td>
+            <td th:text="${stockist.address}">Address</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(stockists)}">
+            <td colspan="7" style="text-align:center;">No stockist found.</td>
+        </tr>
+        </tbody>
+    </table>
+    <a href="/stockist" class="back-link">&larr; Back to Stockist Dashboard</a>
+</div>
+</body>
+</html>

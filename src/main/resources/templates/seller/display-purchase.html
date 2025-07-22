@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Purchase Records</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background: #f4f6fb;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 38px auto;
+            background: #fff;
+            padding: 34px 36px 24px 36px;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px rgba(50,70,120,0.13);
+            min-height: 90vh;
+        }
+        h1 {
+            text-align: center;
+            color: #274c97;
+            margin-bottom: 25px;
+            font-size: 2rem;
+            letter-spacing: 1px;
+        }
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin-bottom: 20px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .filters select, .filters input[type="date"], .filters input[type="text"] {
+            padding: 7px 13px;
+            border-radius: 7px;
+            border: 1px solid #c7d0e6;
+            font-size: 1.03rem;
+            min-width: 130px;
+            background: #f7fafd;
+        }
+        .toolbar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .toolbar button, .toolbar label {
+            padding: 10px 22px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            background: #43b7e8;
+            color: #fff;
+            transition: background 0.18s;
+            margin-bottom: 2px;
+        }
+        .toolbar button.delete { background: #f44336; }
+        .toolbar button.delete:hover { background: #c62828; }
+        .toolbar button.transfer { background: #ffd900; color: #1e2b42;}
+        .toolbar button.transfer:hover { background: #ffb400; }
+        .toolbar button.export { background: #4caf50; }
+        .toolbar button.export:hover { background: #357a38; }
+        .toolbar label { background: #dfe4ee; color: #2e4c8c; border: 1px solid #bfd0ec;}
+        .toolbar input[type="file"] { display: none; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 1px 8px rgba(50,72,120,0.10);
+            background: #fff;
+        }
+        th, td {
+            padding: 12px 7px;
+            border-bottom: 1px solid #e6eaf0;
+            text-align: left;
+            font-size: 1.05rem;
+        }
+        th {
+            background: #e6eefe;
+            font-weight: 700;
+            color: #253c6b;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        tr:last-child td { border-bottom: none;}
+        .edit-btn, .save-btn, .cancel-btn {
+            padding: 7px 15px;
+            border-radius: 6px;
+            font-size: 1rem;
+            margin-right: 3px;
+            border: none;
+            cursor: pointer;
+        }
+        .edit-btn { background: #43b7e8; color: #fff;}
+        .edit-btn:hover { background: #2e83c0;}
+        .save-btn { background: #4caf50; color: #fff;}
+        .save-btn:hover { background: #357a38;}
+        .cancel-btn { background: #ff9800; color: #fff;}
+        .cancel-btn:hover { background: #c26d01;}
+        @media (max-width: 1200px) {
+            .container { max-width: 99vw; padding: 2vw;}
+            table, thead, tbody, th, td, tr { font-size: 14px;}
+        }
+        @media (max-width: 650px) {
+            .filters { flex-direction: column; gap: 8px;}
+            .toolbar { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Purchase Records</h1>
+    <!-- Filter Bar -->
+    <div class="filters">
+        <input type="text" id="filterName" placeholder="Filter by Seller Name" oninput="filterTable()">
+        <input type="text" id="filterWarehouse" placeholder="Warehouse" oninput="filterTable()">
+        <select id="filterCommodity" onchange="filterTable()">
+            <option value="">All Commodities</option>
+            <option>Wheat</option>
+            <option>Maize</option>
+            <option>Paddy</option>
+        </select>
+        <input type="date" id="filterDate" onchange="filterTable()">
+        <select id="filterQuality" onchange="filterTable()">
+            <option value="">All Quality</option>
+            <option>Good</option>
+            <option>BD</option>
+        </select>
+    </div>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button class="delete" onclick="deleteSelectedRows()">Delete Selected</button>
+        <button class="transfer" onclick="openTransferModal()">Transfer</button>
+        <button class="export" onclick="window.location='/seller/export-purchases'">Export Excel</button>
+        <button class="export" onclick="window.location='/seller/export-purchases-pdf'">Export PDF</button>
+        <label for="importExcel" style="margin-bottom:0;">Import Excel</label>
+        <input type="file" id="importExcel" accept=".xlsx,.xls" onchange="importFromExcel(event)">
+    </div>
+
+    <!-- TRANSFER MODAL -->
+    <div id="transferModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(34,46,78,0.13); z-index:3000;">
+        <div style="background:#fff; max-width:420px; margin:5% auto; padding:32px 24px 18px 24px; border-radius:15px; box-shadow:0 4px 24px #22314e33; position:relative;">
+            <button onclick="closeTransferModal()" style="position:absolute; top:8px; right:15px; background:transparent; border:none; font-size:1.6rem; color:#888; cursor:pointer;">&times;</button>
+            <h3 style="text-align:center; color:#274c97; margin-bottom:20px;">Transfer Selected Purchases to Stock</h3>
+            <form id="transferForm" onsubmit="submitTransfer(event)">
+                <div style="margin-bottom:12px;">
+                    <label>Stockist Name</label>
+                    <input list="stockistList" id="transferStockist" name="stockistName" autocomplete="off" required>
+                    <datalist id="stockistList">
+                        <option th:each="s : ${stockists}" th:value="${s.stockistName}"></option>
+                    </datalist>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label>Warehouse</label>
+                    <input list="warehouseList" id="transferWarehouse" name="warehouse" autocomplete="off" required>
+                    <datalist id="warehouseList">
+                        <option th:each="w : ${warehouses}" th:value="${w}"></option>
+                    </datalist>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label>Commodity</label>
+                    <select id="transferCommodity" name="commodity" required style="width:100%; padding:7px; border-radius:6px;">
+                        <option value="Wheat">Wheat</option>
+                        <option value="Maize">Maize</option>
+                        <option value="Paddy">Paddy</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:8px;">
+                    <label>Change Date?</label>
+                    <label style="margin-left:8px;">
+                        <input type="radio" name="changeDate" value="no" checked onchange="toggleTransferDate()"> No
+                    </label>
+                    <label style="margin-left:18px;">
+                        <input type="radio" name="changeDate" value="yes" onchange="toggleTransferDate()"> Yes
+                    </label>
+                </div>
+                <div id="transferDateGroup" style="margin-bottom:12px; display:none;">
+                    <label>New Date</label>
+                    <input type="date" id="transferDate" name="newDate" style="width:100%; padding:7px; border-radius:6px;">
+                </div>
+                <div style="margin-bottom:8px;">
+                    <label>Change Rate?</label>
+                    <label style="margin-left:8px;">
+                        <input type="radio" name="changeRate" value="no" checked onchange="toggleTransferRate()"> No
+                    </label>
+                    <label style="margin-left:18px;">
+                        <input type="radio" name="changeRate" value="yes" onchange="toggleTransferRate()"> Yes
+                    </label>
+                </div>
+                <div id="transferRateGroup" style="margin-bottom:12px; display:none;">
+                    <label>New Rate</label>
+                    <input type="number" id="transferRate" name="newRate" step="0.01" style="width:100%; padding:7px; border-radius:6px;">
+                </div>
+                <div style="text-align:center; margin-top:15px;">
+                    <button type="submit" style="background:#274c97; color:#fff; font-weight:600; border:none; border-radius:7px; padding:10px 32px; font-size:1.13rem;">Transfer</button>
+                    <button type="button" onclick="closeTransferModal()" style="background:#eee; color:#333; border:none; border-radius:7px; padding:10px 22px; margin-left:16px;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <table id="purchaseTable">
+        <thead>
+        <tr>
+            <th><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
+            <th>#</th>
+            <th>Date</th>
+            <th>RST No</th>
+            <th>Warehouse</th>
+            <th>Seller</th>
+            <th>Mobile</th>
+            <th>Commodity</th>
+            <th>Quantity</th>
+            <th>Reduction</th>
+            <th>Net Qty</th>
+            <th>Rate</th>
+            <th>Cost</th>
+            <th>Handling</th>
+            <th>Total Cost</th>
+            <th>Quality</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="purchase,iterStat : ${purchases}" th:id="'row-'+${purchase.id}" class="data-row">
+            <td><input type="checkbox" class="row-select" th:value="${purchase.id}"></td>
+            <td th:text="${iterStat.count}"></td>
+            <td th:text="${purchase.date}"></td>
+            <td th:text="${purchase.rstNo}"></td>
+            <td th:text="${purchase.warehouse}"></td>
+            <td th:text="${purchase.seller}"></td>
+            <td th:text="${purchase.mobile}"></td>
+            <td th:text="${purchase.commodity}"></td>
+            <td th:text="${purchase.quantity}"></td>
+            <td th:text="${purchase.reduction}"></td>
+            <td th:text="${purchase.netQty}"></td>
+            <td th:text="${purchase.rate}"></td>
+            <td th:text="${purchase.cost}"></td>
+            <td th:text="${purchase.handling}"></td>
+            <td th:text="${purchase.totalCost}"></td>
+            <td th:text="${purchase.quality}"></td>
+            <td>
+                <button type="button" class="edit-btn" th:onclick="'enableEdit(' + ${purchase.id} + ')'">Edit</button>
+            </td>
+        </tr>
+        <!-- Inline editing row (hidden by default) -->
+        <tr th:each="purchase, iterStat : ${purchases}" th:id="'edit-'+${purchase.id}" class="edit-row" style="display:none;">
+            <form th:action="@{/seller/update-purchase/{id}(id=${purchase.id})}" method="post">
+                <td></td>
+                <td th:text="${iterStat.count}"></td>
+                <td><input type="date" name="date" th:value="${purchase.date}" required></td>
+                <td><input type="text" name="rstNo" th:value="${purchase.rstNo}" required></td>
+                <td><input type="text" name="warehouse" th:value="${purchase.warehouse}" required></td>
+                <td><input type="text" name="seller" th:value="${purchase.seller}" required></td>
+                <td><input type="text" name="mobile" th:value="${purchase.mobile}" required></td>
+                <td>
+                    <select name="commodity" required>
+                        <option value="Wheat" th:selected="${purchase.commodity == 'Wheat'}">Wheat</option>
+                        <option value="Maize" th:selected="${purchase.commodity == 'Maize'}">Maize</option>
+                        <option value="Paddy" th:selected="${purchase.commodity == 'Paddy'}">Paddy</option>
+                    </select>
+                </td>
+                <td><input type="number" name="quantity" th:value="${purchase.quantity}" step="0.01" required></td>
+                <td><input type="number" name="reduction" th:value="${purchase.reduction}" step="0.01"></td>
+                <td><input type="number" name="netQty" th:value="${purchase.netQty}" step="0.01" readonly></td>
+                <td><input type="number" name="rate" th:value="${purchase.rate}" step="0.01" required></td>
+                <td><input type="number" name="cost" th:value="${purchase.cost}" step="0.01" readonly></td>
+                <td><input type="number" name="handling" th:value="${purchase.handling}" step="0.01"></td>
+                <td><input type="number" name="totalCost" th:value="${purchase.totalCost}" step="0.01" readonly></td>
+                <td>
+                    <select name="quality">
+                        <option value="Good" th:selected="${purchase.quality == 'Good'}">Good</option>
+                        <option value="BD" th:selected="${purchase.quality == 'BD'}">BD</option>
+                    </select>
+                </td>
+                <td>
+                    <button type="submit" class="save-btn">Save</button>
+                    <button type="button" class="cancel-btn" th:onclick="'cancelEdit(' + ${purchase.id} + ')'">Cancel</button>
+                </td>
+            </form>
+        </tr>
+        <tr th:if="${#lists.isEmpty(purchases)}">
+            <td colspan="17" style="text-align:center; color:#b5b7bb;">No purchase records found.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<!-- Excel and PDF export (JS libraries only needed if you want frontend export. All real export is backend now) -->
+<script>
+    // Filter table by inputs
+    function filterTable() {
+        let name = document.getElementById("filterName").value.toLowerCase();
+        let warehouse = document.getElementById("filterWarehouse").value.toLowerCase();
+        let commodity = document.getElementById("filterCommodity").value;
+        let date = document.getElementById("filterDate").value;
+        let quality = document.getElementById("filterQuality").value;
+        let rows = document.querySelectorAll("#purchaseTable tbody tr.data-row");
+        rows.forEach(row => {
+            let show = true;
+            if (name && !row.children[5].innerText.toLowerCase().includes(name)) show = false;
+            if (warehouse && !row.children[4].innerText.toLowerCase().includes(warehouse)) show = false;
+            if (commodity && row.children[7].innerText !== commodity) show = false;
+            if (date && row.children[2].innerText !== date) show = false;
+            if (quality && row.children[15].innerText !== quality) show = false;
+            row.style.display = show ? "" : "none";
+        });
+    }
+    // Inline edit
+    function enableEdit(rowId) {
+        document.getElementById("row-"+rowId).style.display = "none";
+        document.getElementById("edit-"+rowId).style.display = "";
+    }
+    function cancelEdit(rowId) {
+        document.getElementById("row-"+rowId).style.display = "";
+        document.getElementById("edit-"+rowId).style.display = "none";
+    }
+    // Bulk select
+    function toggleAll(box) {
+        let checked = box.checked;
+        document.querySelectorAll('.row-select').forEach(cb => cb.checked = checked);
+    }
+    // Delete selected rows (calls backend via fetch for each, you may batch in backend)
+    function deleteSelectedRows() {
+        let ids = Array.from(document.querySelectorAll('.row-select:checked')).map(cb=>cb.value);
+        if (ids.length === 0) { alert("No rows selected!"); return; }
+        if (!confirm("Delete selected records?")) return;
+        ids.forEach(id => {
+            fetch('/seller/delete-purchase/' + id, { method: 'POST' }).then(r => {
+                document.getElementById('row-'+id).remove();
+                let editRow = document.getElementById('edit-'+id); if (editRow) editRow.remove();
+            });
+        });
+    }
+    // Import Excel using backend
+    function importFromExcel(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+        var formData = new FormData();
+        formData.append("file", file);
+
+        fetch('/seller/import-purchases', {
+            method: 'POST',
+            body: formData
+        })
+            .then(res => res.text())
+            .then(msg => {
+                alert(msg);      // Show backend success/error
+                location.reload(); // Reload data after import (optional)
+            })
+            .catch(err => alert("Import failed: " + err));
+    }
+
+    // --- TRANSFER LOGIC BELOW ---
+    function openTransferModal() {
+        let checked = Array.from(document.querySelectorAll('.row-select:checked')).map(cb => cb.value);
+        if (checked.length === 0) {
+            alert("Select at least one row to transfer.");
+            return;
+        }
+        document.getElementById('transferModal').style.display = 'block';
+    }
+    function closeTransferModal() {
+        document.getElementById('transferModal').style.display = 'none';
+    }
+    function toggleTransferDate() {
+        var show = document.querySelector('input[name="changeDate"]:checked').value === "yes";
+        document.getElementById('transferDateGroup').style.display = show ? "" : "none";
+    }
+    function toggleTransferRate() {
+        var show = document.querySelector('input[name="changeRate"]:checked').value === "yes";
+        document.getElementById('transferRateGroup').style.display = show ? "" : "none";
+    }
+    function submitTransfer(event) {
+        event.preventDefault();
+        let checked = Array.from(document.querySelectorAll('.row-select:checked')).map(cb => cb.value);
+        let data = {
+            purchaseIds: checked,
+            stockistName: document.getElementById('transferStockist').value,
+            warehouse: document.getElementById('transferWarehouse').value, // <-- ADDED LINE
+            commodity: document.getElementById('transferCommodity').value,
+            changeDate: document.querySelector('input[name="changeDate"]:checked').value,
+            newDate: document.getElementById('transferDate').value,
+            changeRate: document.querySelector('input[name="changeRate"]:checked').value,
+            newRate: document.getElementById('transferRate').value
+        };
+        fetch('/seller/transfer-to-stock', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(res => res.json())
+            .then(resp => {
+                if (resp.status === "ok") {
+                    window.location.reload();
+                } else {
+                    alert("Transfer failed: " + resp.msg);
+                }
+            });
+    }
+</script>
+</body>
+</html>
+

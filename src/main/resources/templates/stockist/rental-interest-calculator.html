@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Rental & Interest Calculator</title>
+    <style>
+        body { background: #f6f8fa; font-family: 'Segoe UI', Arial, sans-serif; }
+        .container { max-width: 520px; margin: 36px auto; background: #fff; padding: 30px 22px; border-radius: 13px; box-shadow: 0 2px 16px #b6c2e7;}
+        h2 { color: #2a4687; text-align: center; margin-bottom: 20px;}
+        label { font-weight: 600; margin-top: 12px; display: block;}
+        input, select { width: 100%; padding: 8px; border-radius: 7px; border: 1px solid #c5d1e7; margin-bottom: 14px;}
+        .btn { background: #274c97; color: #fff; border: none; border-radius: 7px; padding: 10px 0; width: 100%; font-size: 1.06rem; font-weight: 600; cursor:pointer;}
+        .section { background: #f4f8fd; border-radius: 9px; margin-bottom: 18px; padding: 14px 13px;}
+        .result { margin-top: 10px; color: #249755; font-weight: 600; font-size: 1.05rem;}
+        .show-details-btn { background: #2e86c1; margin-left: 8px; font-size: 1rem; padding: 6px 18px;}
+        .modal-bg { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(60,72,95,0.11); display:none; align-items:center; justify-content:center; z-index:10;}
+        .modal-content {
+            background:#fff;
+            padding:30px 28px 18px 28px;
+            border-radius:13px;
+            box-shadow:0 4px 32px #22314e33;
+            position:relative;
+            min-width:300px;
+            max-width: 92vw;
+            max-height: 90vh;
+            overflow: hidden; /* hide overflow except the scrollable child */
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-content table { border-collapse:collapse; width:100%; margin-bottom: 10px;}
+        .modal-content th, .modal-content td { border:1px solid #c5d1e7; padding:7px 9px; text-align:center;}
+        .modal-content th { background:#f2f7fa;}
+        .modal-content h4 { text-align:center; margin-bottom:14px;}
+        .export-btn { margin: 4px 6px 4px 0; background:#274c97; color:#fff; border:none; border-radius:5px; padding:5px 18px; font-size:0.97rem;}
+        .close-modal-btn { position:absolute; top:10px; right:16px; background:transparent; border:none; font-size:1.6rem; color:#888; cursor:pointer;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Warehouse Rental & Interest Calculator</h2>
+    <form id="calcForm" onsubmit="return false;">
+        <label>Stockist Name</label>
+        <input type="text" id="stockist" name="stockist" list="stockist-list" autocomplete="off" required>
+        <datalist id="stockist-list"></datalist>
+
+        <label>Warehouse Name</label>
+        <input type="text" id="warehouse" name="warehouse" list="warehouse-list" autocomplete="off" required>
+        <datalist id="warehouse-list"></datalist>
+
+        <label>Commodity</label>
+        <select id="commodity" name="commodity" required>
+            <option value="Wheat">Wheat</option>
+            <option value="Maize">Maize</option>
+            <option value="Paddy">Paddy</option>
+        </select>
+
+        <label>Upto Date</label>
+        <input type="date" id="date" name="date" required>
+    </form>
+
+    <div class="section">
+        <button class="btn" onclick="calculateRental()">Calculate Rental</button>
+        <div id="rentalResult" class="result"></div>
+        <button class="show-details-btn" style="display:none;" id="showRentalDetailsBtn" onclick="showDetails('rental')">Show Details</button>
+    </div>
+    <div class="section">
+        <button class="btn" onclick="calculateInterest()">Calculate Interest</button>
+        <div id="interestResult" class="result"></div>
+        <button class="show-details-btn" style="display:none;" id="showInterestDetailsBtn" onclick="showDetails('interest')">Show Details</button>
+    </div>
+</div>
+
+<!-- Modal for details -->
+<div class="modal-bg" id="detailsModal">
+    <div class="modal-content">
+        <button class="close-modal-btn" onclick="closeDetails()">&times;</button>
+        <h4 id="detailsTitle"></h4>
+        <div style="overflow-x:auto; overflow-y:auto; flex:1 1 auto; min-height:50px; max-height:55vh;">
+            <table id="detailsTable"></table>
+        </div>
+        <div style="margin: 10px 0;">
+            <button class="export-btn" onclick="exportDetails('excel')">Export Excel</button>
+            <button class="export-btn" onclick="exportDetails('pdf')">Export PDF</button>
+        </div>
+        <div class="result" id="detailsTotal"></div>
+    </div>
+</div>
+
+<script>
+    let rentalDetails = [], interestDetails = [], lastType = '';
+
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("/stockist/autocomplete/stockists")
+            .then(res => res.json())
+            .then(list => {
+                let dl = document.getElementById("stockist-list");
+                dl.innerHTML = "";
+                list.forEach(s => {
+                    let opt = document.createElement("option");
+                    opt.value = s;
+                    dl.appendChild(opt);
+                });
+            });
+        fetch("/stockist/autocomplete/warehouses")
+            .then(res => res.json())
+            .then(list => {
+                let dl = document.getElementById("warehouse-list");
+                dl.innerHTML = "";
+                list.forEach(w => {
+                    let opt = document.createElement("option");
+                    opt.value = w;
+                    dl.appendChild(opt);
+                });
+            });
+    });
+
+    function getInputs() {
+        return {
+            stockist: document.getElementById('stockist').value,
+            warehouse: document.getElementById('warehouse').value,
+            commodity: document.getElementById('commodity').value,
+            date: document.getElementById('date').value
+        };
+    }
+
+    function calculateRental() {
+        let inputs = getInputs();
+        if(!inputs.stockist || !inputs.warehouse || !inputs.commodity || !inputs.date) { alert("Fill all fields"); return; }
+        fetch('/stockist/rental', {
+            method: "POST",
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams(inputs)
+        })
+            .then(res => res.json())
+            .then(res => {
+                rentalDetails = res.details || [];
+                document.getElementById("rentalResult").innerHTML = "Total Rental: ₹ " + (res.total ? res.total.toFixed(2) : "0.00");
+                let btn = document.getElementById("showRentalDetailsBtn");
+                btn.style.display = rentalDetails.length > 0 ? '' : 'none';
+            });
+    }
+
+    function calculateInterest() {
+        let inputs = getInputs();
+        if(!inputs.stockist || !inputs.warehouse || !inputs.commodity || !inputs.date) { alert("Fill all fields"); return; }
+        fetch('/stockist/interest', {
+            method: "POST",
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams(inputs)
+        })
+            .then(res => res.json())
+            .then(res => {
+                interestDetails = res.details || [];
+                document.getElementById("interestResult").innerHTML = "Total Interest: ₹ " + (res.total ? res.total.toFixed(2) : "0.00");
+                let btn = document.getElementById("showInterestDetailsBtn");
+                btn.style.display = interestDetails.length > 0 ? '' : 'none';
+            });
+    }
+
+    function showDetails(type) {
+        lastType = type;
+        let modal = document.getElementById("detailsModal");
+        let table = document.getElementById("detailsTable");
+        let totalDiv = document.getElementById("detailsTotal");
+        let rows = (type === "rental" ? rentalDetails : interestDetails);
+        table.innerHTML = "";
+        let headers, fields, title;
+        if (type === "rental") {
+            headers = ["Date", "Quantity (MT)", "Day's Rental", "Cumulative"];
+            fields = ["date", "qtyMT", "dayRental", "cumulative"];
+            title = "Rental Details (Day-wise)";
+        } else {
+            headers = ["Date", "Cash Loan", "Margin Loan", "Margin", "Day's Interest", "Cumulative"];
+            fields = ["date", "cashLoan", "marginLoan", "margin", "dayInterest", "cumulative"];
+            title = "Interest Details (Day-wise)";
+        }
+        document.getElementById("detailsTitle").innerText = title;
+
+        // Table header
+        let thead = document.createElement("thead");
+        let hr = document.createElement("tr");
+        headers.forEach(h => { let th = document.createElement("th"); th.innerText = h; hr.appendChild(th); });
+        thead.appendChild(hr);
+        table.appendChild(thead);
+
+        // Table body
+        let tbody = document.createElement("tbody");
+        rows.forEach(row => {
+            let tr = document.createElement("tr");
+            fields.forEach(f => {
+                let td = document.createElement("td");
+                let val = row[f];
+                td.innerText = (typeof val === "number") ? val.toFixed(2) : val;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+
+        // Total at the bottom
+        if (rows.length > 0) {
+            let t = rows[rows.length - 1][fields[fields.length - 1]];
+            totalDiv.innerHTML = "<b>Total: ₹ " + (t ? t.toFixed(2) : "0.00") + "</b>";
+        } else totalDiv.innerHTML = "";
+
+        modal.style.display = "flex";
+    }
+
+    function closeDetails() {
+        document.getElementById("detailsModal").style.display = "none";
+    }
+
+    // Excel/PDF export
+    function exportDetails(format) {
+        let type = lastType;
+        let details = (type === "rental" ? rentalDetails : interestDetails);
+        if (!details.length) { alert("No details to export!"); return; }
+        fetch("/stockist/export-" + format, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: type, details: details })
+        })
+            .then(res => res.blob())
+            .then(blob => {
+                let url = window.URL.createObjectURL(blob);
+                let a = document.createElement("a");
+                a.href = url;
+                a.download = type + "-details." + (format === "excel" ? "xlsx" : "pdf");
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+            });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Seller Module</title>
+    <style>
+        body {
+            background: #f2f4f8;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 430px;
+            margin: 60px auto;
+            background: #fff;
+            padding: 34px 30px 32px 30px;
+            border-radius: 18px;
+            box-shadow: 0 2px 32px rgba(60,72,95,0.14);
+            text-align: center;
+        }
+        h1 {
+            color: #1b3660;
+            margin-bottom: 26px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .menu form {
+            margin: 0;
+        }
+        .menu button {
+            width: 100%;
+            padding: 13px 0;
+            font-size: 1.08rem;
+            color: #fff;
+            background: linear-gradient(90deg, #3267d6 0%, #49c0e7 100%);
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 1px 6px rgba(50,103,214,0.10);
+            transition: background 0.18s, transform 0.13s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .menu button:hover {
+            background: linear-gradient(90deg, #274c97 0%, #319fc5 100%);
+            transform: translateY(-2px) scale(1.03);
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 15px;
+            color: #355ba2;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .back-link:hover {
+            color: #1b3660;
+            text-decoration: underline;
+        }
+        @media (max-width: 500px) {
+            .container {
+                max-width: 96vw;
+                padding: 8vw 2vw 5vw 2vw;
+            }
+            h1 {
+                font-size: 1.32rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Seller Module</h1>
+    <div class="menu">
+        <form action="/seller/add" method="get">
+            <button type="submit">Add Seller</button>
+        </form>
+        <form action="/seller/add-purchase" method="get">
+            <button type="submit">Add Purchase</button>
+        </form>
+        <form action="/seller/add-payment" method="get">
+            <button type="submit">Add Payment</button>
+        </form>
+        <form action="/seller/display" method="get">
+            <button type="submit">Display Seller</button>
+        </form>
+        <form action="/seller/display-purchase" method="get">
+            <button type="submit">Display Purchase</button>
+        </form>
+        <form action="/seller/display-payment" method="get">
+            <button type="submit">Display Payment</button>
+        </form>
+        <form action="/seller/payment-due" method="get">
+            <button type="submit">Display Payment Due</button>
+        </form>
+    </div>
+    <a href="/" class="back-link">&larr; Back to Homepage</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add Stock Data</title>
+    <style>
+        .container { max-width: 480px; margin: 48px auto; background: #fff; padding: 30px 22px; border-radius: 13px; box-shadow: 0 2px 16px #b6c2e7;}
+        h2 { color: #2a4687; text-align: center; margin-bottom: 18px;}
+        form label { font-weight: 600; margin-top: 8px; display: block;}
+        form input, form select { width: 100%; padding: 8px; border-radius: 7px; border: 1px solid #c5d1e7; margin-bottom: 14px;}
+        .btn { background: #274c97; color: #fff; border: none; border-radius: 7px; padding: 12px 0; width: 100%; font-size: 1rem; font-weight: 600;}
+        .success { color: #249755; text-align: center; margin-bottom: 12px; }
+        .back-link { display: block; margin-top: 18px; text-align: left; color: #274c97; text-decoration: none;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Add Stock Data</h2>
+    <div th:if="${success}" class="success">Stock data saved successfully!</div>
+    <form th:action="@{/stockist/add-stockdata}" th:object="${stockData}" method="post" autocomplete="off">
+        <label>Date</label>
+        <input type="date" th:field="*{date}" required>
+
+        <label>RST No</label>
+        <input type="text" th:field="*{rstNo}" required>
+
+        <label>Warehouse</label>
+        <input type="text" th:field="*{warehouse}" id="warehouse" list="warehouse-list" required autocomplete="off" placeholder="Start typing warehouse name...">
+        <datalist id="warehouse-list">
+            <option th:each="w : ${warehouses}" th:value="${w}"></option>
+        </datalist>
+
+        <label>Stockist Name</label>
+        <input type="text" th:field="*{stockistName}" id="stockistName" list="stockist-list" required autocomplete="off" placeholder="Start typing stockist name..." oninput="fillMobileFromStockist()">
+        <datalist id="stockist-list">
+            <option th:each="s : ${stockists}" th:value="${s.stockistName}" th:data-mobile="${s.mobile}"></option>
+        </datalist>
+
+        <label>Mobile</label>
+        <input type="text" th:field="*{mobile}" id="mobile" readonly required placeholder="Auto-filled">
+
+        <label>Commodity</label>
+        <select th:field="*{commodity}">
+            <option value="Wheat">Wheat</option>
+            <option value="Maize">Maize</option>
+            <option value="Paddy">Paddy</option>
+        </select>
+
+        <label>Quantity (kg)</label>
+        <input type="number" th:field="*{quantity}" step="0.01" required oninput="autoCalculateNetQtyCostTotal()">
+
+        <label>Reduction (kg)</label>
+        <input type="number" th:field="*{reduction}" step="0.01" value="0" oninput="autoCalculateNetQtyCostTotal()">
+
+        <label>Net Quantity (kg)</label>
+        <input type="number" th:field="*{netQty}" step="0.01" id="netQty" readonly>
+
+        <label>Rate</label>
+        <input type="number" th:field="*{rate}" step="0.01" oninput="autoCalculateNetQtyCostTotal()">
+
+        <label>Cost</label>
+        <input type="number" th:field="*{cost}" step="0.01" id="cost" readonly>
+
+        <label>Handling</label>
+        <input type="number" th:field="*{handling}" step="0.01" value="0" oninput="autoCalculateNetQtyCostTotal()">
+
+        <label>Total Cost</label>
+        <input type="number" th:field="*{totalCost}" step="0.01" id="totalCost" readonly>
+
+        <label>Quality</label>
+        <select th:field="*{quality}">
+            <option value="Good">Good</option>
+            <option value="BD">BD</option>
+        </select>
+
+        <!-- kindOfStock is hidden and always "Self" -->
+        <input type="hidden" th:field="*{kindOfStock}" value="Self">
+        <button class="btn" type="submit">Save Stock Data</button>
+    </form>
+    <a href="/stockist" class="back-link">&larr; Back to Stockist Dashboard</a>
+</div>
+
+<script>
+    // Prepare a JS map of stockistName => mobile
+    var stockists = /*[[${stockists}]]*/ [];
+    var stockistMobileMap = {};
+    // The above line will be replaced by Thymeleaf. If not using Thymeleaf inline JS, do this after page loads:
+    document.addEventListener("DOMContentLoaded", function () {
+        var dataList = document.getElementById('stockist-list');
+        for (var i = 0; i < dataList.options.length; i++) {
+            var opt = dataList.options[i];
+            stockistMobileMap[opt.value] = opt.getAttribute('data-mobile');
+        }
+    });
+
+    function fillMobileFromStockist() {
+        var stockistName = document.getElementById('stockistName').value;
+        document.getElementById('mobile').value = stockistMobileMap[stockistName] || "";
+    }
+
+    function autoCalculateNetQtyCostTotal() {
+        var qty = parseFloat(document.querySelector('[name="quantity"]').value) || 0;
+        var reduction = parseFloat(document.querySelector('[name="reduction"]').value) || 0;
+        var netQty = qty - reduction;
+        document.getElementById('netQty').value = netQty.toFixed(2);
+
+        var rate = parseFloat(document.querySelector('[name="rate"]').value) || 0;
+        var cost = netQty * rate;
+        document.getElementById('cost').value = cost.toFixed(2);
+
+        var handling = parseFloat(document.querySelector('[name="handling"]').value) || 0;
+        var totalCost = cost + handling;
+        document.getElementById('totalCost').value = totalCost.toFixed(2);
+    }
+</script>
+</body>
+</html>

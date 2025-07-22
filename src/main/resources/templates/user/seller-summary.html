@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Seller Summary</title>
+    <style>
+        .container { max-width:570px; margin:62px auto; background:#fff; border-radius:15px; box-shadow:0 2px 18px #c8d0e7; padding:32px;}
+        h2 { text-align:center; color:#274c97;}
+        .summary-row { font-size:1.14rem; margin:19px 0; }
+        .label { color:#344a71; }
+        .value { font-weight: bold; }
+        table { width:100%; border-collapse:collapse; margin-top:32px;}
+        th, td { border:1px solid #b6c3e0; padding:10px; text-align:center; }
+        th { background:#e7edfa; color:#274c97;}
+        td { background:#f8fbff;}
+        .back-link { display:block; margin-top:22px; text-align:center;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Purchase Summary</h2>
+    <div class="summary-row">
+        <span class="label">Total Purchase: </span>
+        <span class="value" th:text="${totalPurchase}">0.00</span>
+    </div>
+    <div class="summary-row">
+        <span class="label">Total Paid: </span>
+        <span class="value" th:text="${totalPaid}">0.00</span>
+    </div>
+    <div class="summary-row">
+        <span class="label">Payment Due: </span>
+        <span class="value" th:text="${due}">0.00</span>
+    </div>
+
+    <!-- Stock Table -->
+    <h3 style="text-align:center; margin-top:36px;">Stock Summary (in kg)</h3>
+    <table>
+        <thead>
+        <tr>
+            <th>Warehouse</th>
+            <th>Wheat</th>
+            <th>Maize</th>
+            <th>Paddy</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="entry : ${stockSummary}">
+            <td th:text="${entry.key}">Warehouse</td>
+            <td th:text="${entry.value['Wheat'] ?: 0}">0</td>
+            <td th:text="${entry.value['Maize'] ?: 0}">0</td>
+            <td th:text="${entry.value['Paddy'] ?: 0}">0</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a href="/user/seller" class="back-link">&larr; Back to Seller Dashboard</a>
+</div>
+</body>
+</html>
+

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Warehouse Management - Home</title>
+    <style>
+        body {
+            background: #f2f4f8;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 450px;
+            margin: 60px auto;
+            background: #fff;
+            padding: 36px 32px 32px 32px;
+            border-radius: 18px;
+            box-shadow: 0 2px 32px rgba(60,72,95,0.14);
+            text-align: center;
+        }
+        h1 {
+            color: #22314e;
+            margin-bottom: 28px;
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .menu form {
+            margin: 0;
+        }
+        .menu button {
+            width: 100%;
+            padding: 14px 0;
+            font-size: 1.1rem;
+            color: #fff;
+            background: linear-gradient(90deg, #3267d6 0%, #49c0e7 100%);
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 1px 6px rgba(50,103,214,0.12);
+            transition: background 0.18s, transform 0.13s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .menu button:hover {
+            background: linear-gradient(90deg, #274c97 0%, #319fc5 100%);
+            transform: translateY(-2px) scale(1.03);
+        }
+        @media (max-width: 520px) {
+            .container {
+                max-width: 96vw;
+                padding: 14vw 4vw 6vw 4vw;
+            }
+            h1 {
+                font-size: 1.45rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div style="text-align:right; max-width:450px; margin: 24px auto 0 auto;">
+    <form action="/logout" method="post" style="display:inline;">
+        <button type="submit" style="
+            background:#e74c3c;
+            color:#fff;
+            border:none;
+            border-radius:6px;
+            padding:7px 22px;
+            font-size:1rem;
+            font-weight:500;
+            cursor:pointer;
+            box-shadow:0 1px 4px rgba(231,76,60,0.13);
+        ">Logout</button>
+    </form>
+</div>
+<div class="container">
+    <h1>Warehouse Management System</h1>
+    <div class="menu">
+        <form action="/seller" method="get">
+            <button type="submit">Seller Module</button>
+        </form>
+        <form action="/stockist" method="get">
+            <button type="submit">Stockist Module</button>
+        </form>
+        <form action="/buyer" method="get">
+            <button type="submit">Buyer Module</button>
+        </form>
+        <form action="/purchase-summary" method="get">
+            <button type="submit">Purchase Summary</button>
+        </form>
+        <form action="/stock-summary" method="get">
+            <button type="submit">Stock Summary</button>
+        </form>
+        <form action="/final-report" method="get">
+            <button type="submit">Final Report</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

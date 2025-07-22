@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Seller Purchases</title>
+    <style>
+        /* Add your CSS for table, etc. here */
+        table { width:100%; border-collapse:collapse; background:#fff; }
+        th, td { border: 1px solid #d2dbe7; padding: 8px 10px; }
+        th { background:#f3f7fc; }
+        .container { max-width:850px; margin:32px auto; background:#fff; border-radius:12px; box-shadow:0 2px 12px #c8d0e7; padding:20px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Your Purchase Records</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>RST No</th>
+            <th>Warehouse</th>
+            <th>Commodity</th>
+            <th>Quantity</th>
+            <th>Rate</th>
+            <th>Total Cost</th>
+            <!-- Add more fields if needed -->
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="purchase : ${purchases}">
+            <td th:text="${purchase.date}">2024-01-01</td>
+            <td th:text="${purchase.rstNo}">RST001</td>
+            <td th:text="${purchase.warehouse}">Warehouse A</td>
+            <td th:text="${purchase.commodity}">Wheat</td>
+            <td th:text="${purchase.quantity}">10</td>
+            <td th:text="${purchase.rate}">2100</td>
+            <td th:text="${purchase.totalCost}">21000</td>
+        </tr>
+        </tbody>
+    </table>
+    <a href="/user/seller" style="display:block;margin-top:22px;text-align:center;">&larr; Back to Seller Dashboard</a>
+</div>
+</body>
+</html>

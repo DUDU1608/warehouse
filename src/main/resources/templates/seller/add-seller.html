@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add Seller</title>
+    <style>
+        body {
+            background: #f2f4f8;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 450px;
+            margin: 55px auto 0 auto;
+            background: #fff;
+            padding: 34px 30px 28px 30px;
+            border-radius: 18px;
+            box-shadow: 0 2px 32px rgba(60,72,95,0.13);
+        }
+        h1 {
+            text-align: center;
+            color: #1b3660;
+            margin-bottom: 25px;
+            font-size: 1.6rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 17px;
+        }
+        label {
+            font-size: 1rem;
+            color: #274c97;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+        input, textarea {
+            padding: 11px;
+            font-size: 1rem;
+            border: 1.3px solid #d1dbe8;
+            border-radius: 7px;
+            background: #f7faff;
+            outline: none;
+            transition: border 0.14s;
+            width: 100%;
+            resize: none;
+        }
+        input:focus, textarea:focus {
+            border-color: #3267d6;
+            background: #fff;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        button[type="submit"] {
+            margin-top: 12px;
+            width: 100%;
+            padding: 13px 0;
+            font-size: 1.07rem;
+            color: #fff;
+            background: linear-gradient(90deg, #3267d6 0%, #49c0e7 100%);
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 1px 6px rgba(50,103,214,0.09);
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.12s;
+        }
+        button[type="submit"]:hover {
+            background: linear-gradient(90deg, #274c97 0%, #319fc5 100%);
+            transform: scale(1.025);
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 18px;
+            font-size: 15px;
+            color: #355ba2;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .back-link:hover {
+            color: #1b3660;
+            text-decoration: underline;
+        }
+        @media (max-width: 540px) {
+            .container {
+                max-width: 98vw;
+                padding: 9vw 4vw 6vw 4vw;
+            }
+            h1 {
+                font-size: 1.22rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Add Seller</h1>
+    <form action="/seller/add" method="post">
+        <div class="form-group">
+            <label for="name">Name<span style="color:#f15b5b">*</span></label>
+            <input type="text" id="name" name="name" required maxlength="50" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="mobile">Mobile No<span style="color:#f15b5b">*</span></label>
+            <input type="tel" id="mobile" name="mobile" required pattern="[0-9]{10}" maxlength="10" autocomplete="off" placeholder="10 digits">
+        </div>
+        <div class="form-group">
+            <label for="bankingName">Banking Name<span style="color:#f15b5b">*</span></label>
+            <input type="text" id="bankingName" name="bankingName" required maxlength="50" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="accountNumber">Account Number<span style="color:#f15b5b">*</span></label>
+            <input type="text" id="accountNumber" name="accountNumber" required maxlength="22" autocomplete="off" pattern="[0-9]{9,22}" placeholder="9-22 digits">
+        </div>
+        <div class="form-group">
+            <label for="ifsc">IFSC Code<span style="color:#f15b5b">*</span></label>
+            <input type="text" id="ifsc" name="ifsc" required maxlength="11" autocomplete="off" pattern="[A-Za-z]{4}[0-9]{7}" placeholder="e.g. SBIN0001234">
+        </div>
+        <div class="form-group">
+            <label for="bankName">Bank Name<span style="color:#f15b5b">*</span></label>
+            <input type="text" id="bankName" name="bankName" required maxlength="50" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="address">Address<span style="color:#f15b5b">*</span></label>
+            <textarea id="address" name="address" rows="3" required maxlength="150"></textarea>
+        </div>
+        <button type="submit">Add Seller</button>
+    </form>
+    <a href="/seller" class="back-link">&larr; Back to Seller Module</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Stockist Summary</title>
+    <style>
+        body {
+            background: #f2f4f8;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0; padding: 0;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 32px auto;
+            background: #fff;
+            padding: 32px;
+            border-radius: 18px;
+            box-shadow: 0 2px 24px rgba(60,72,95,0.16);
+        }
+        h2 {
+            color: #22314e;
+            margin-bottom: 26px;
+            font-size: 1.7rem;
+            font-weight: 600;
+        }
+        .btn-back {
+            display: inline-block;
+            margin-bottom: 22px;
+            background: linear-gradient(90deg, #274c97 0%, #319fc5 100%);
+            color: #fff;
+            padding: 9px 22px;
+            border: none;
+            border-radius: 7px;
+            font-size: 1rem;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.17s, transform 0.11s;
+        }
+        .btn-back:hover {
+            background: linear-gradient(90deg, #22314e 0%, #274c97 100%);
+            transform: translateY(-2px) scale(1.04);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        th, td {
+            border: 1px solid #dde3ef;
+            padding: 10px 7px;
+            text-align: center;
+        }
+        th {
+            background: #e7edf8;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        tr:hover td {
+            background: #e6f2fa;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/user/stockist" class="btn-back">&larr; Back to Dashboard</a>
+    <h2>Stockist Summary</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Stockist Name</th>
+            <th>Company Purchase</th>
+            <th>Self Storage</th>
+            <th>Total Quantity</th>
+            <th>Margin</th>
+            <th>Cash Loan</th>
+            <th>Margin Loan</th>
+            <th>Total Loan</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="summary : ${summaries}">
+            <td th:text="${summary.stockistName}">Stockist Name</td>
+            <td th:text="${summary.companyPurchase}">0</td>
+            <td th:text="${summary.selfStorage}">0</td>
+            <td th:text="${summary.totalQuantity}">0</td>
+            <td th:text="${summary.margin}">0</td>
+            <td th:text="${summary.cashLoan}">0</td>
+            <td th:text="${summary.marginLoan}">0</td>
+            <td th:text="${summary.totalLoan}">0</td>
+        </tr>
+        <tr th:if="${summaries == null or #lists.isEmpty(summaries)}">
+            <td colspan="8" style="text-align:center; color: #888;">No data found.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Display Stock Data</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fa; }
+        .container { max-width: 98vw; margin: 32px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 20px #b6c2e7; padding: 26px; }
+        h2 { color: #274c97; text-align: center; margin-bottom: 20px; }
+        .actions, .filters { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .filters select, .filters input { padding: 5px; border-radius: 5px; border: 1px solid #a5b2cc; }
+        .actions button { padding: 7px 14px; border-radius: 6px; border: none; background: #274c97; color: #fff; cursor: pointer; }
+        .actions button:hover { background: #143263; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { border: 1px solid #dde3ef; padding: 7px 6px; text-align: center; }
+        th { background: #e7edf8; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .edit-btn, .save-btn, .cancel-btn { background: #2e86c1; color: #fff; border: none; padding: 3px 9px; border-radius: 4px; cursor: pointer; margin: 1px 2px;}
+        .save-btn { background: #27ae60; }
+        .cancel-btn { background: #c0392b; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Stock Data</h2>
+
+    <!-- FILTERS -->
+    <form class="filters" th:action="@{/stockist/display-stockdata}" method="get">
+        <input type="text" name="stockistName" th:value="${filterStockistName}" placeholder="Stockist Name (autocomplete)">
+        <input type="text" name="warehouse" th:value="${filterWarehouse}" placeholder="Warehouse">
+        <select name="commodity">
+            <option value="">All Commodities</option>
+            <option value="Wheat" th:selected="${filterCommodity == 'Wheat'}">Wheat</option>
+            <option value="Maize" th:selected="${filterCommodity == 'Maize'}">Maize</option>
+            <option value="Paddy" th:selected="${filterCommodity == 'Paddy'}">Paddy</option>
+        </select>
+        <select name="quality">
+            <option value="">All Quality</option>
+            <option value="Good" th:selected="${filterQuality == 'Good'}">Good</option>
+            <option value="BD" th:selected="${filterQuality == 'BD'}">BD</option>
+        </select>
+        <input type="date" name="dateFrom" th:value="${filterDateFrom}">
+        <input type="date" name="dateTo" th:value="${filterDateTo}">
+        <button type="submit">Filter</button>
+    </form>
+
+    <!-- ACTION BUTTONS -->
+    <div class="actions">
+        <button type="button" onclick="bulkDelete()">Delete Selected</button>
+        <button type="button" onclick="exportExcel()">Export Excel</button>
+        <button type="button" onclick="exportPdf()">Export PDF</button>
+        <button type="button" onclick="document.getElementById('importFile').click()">Import Excel</button>
+        <input type="file" id="importFile" style="display:none" onchange="importExcel(this)">
+    </div>
+
+    <!-- STOCK DATA TABLE -->
+    <form id="stockdataTableForm">
+        <table>
+            <thead>
+            <tr>
+                <th>Select</th>
+                <th>Edit</th>
+                <th>Date</th>
+                <th>RST No</th>
+                <th>Warehouse</th>
+                <th>Stockist Name</th>
+                <th>Mobile</th>
+                <th>Commodity</th>
+                <th>Quantity (kg)</th>
+                <th>Reduction (kg)</th>
+                <th>Net Qty (kg)</th>
+                <th>Rate</th>
+                <th>Cost</th>
+                <th>Handling</th>
+                <th>Total Cost</th>
+                <th>Quality</th>
+                <th>Kind of Stock</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${stockDataList}" th:object="${s}">
+                <!-- Checkbox -->
+                <td><input type="checkbox" name="selectedIds" th:value="*{id}"></td>
+                <!-- Edit/Save/Cancel -->
+                <td>
+                    <button type="button" th:id="'editBtn-' + *{id}" class="edit-btn" th:onclick="'enableEdit(' + *{id} + ')'">Edit</button>
+                    <button type="button" th:id="'saveBtn-' + *{id}" class="save-btn" style="display:none;" th:onclick="'saveRow(' + *{id} + ')'">Save</button>
+                    <button type="button" th:id="'cancelBtn-' + *{id}" class="cancel-btn" style="display:none;" th:onclick="'cancelEdit(' + *{id} + ')'">Cancel</button>
+                </td>
+                <!-- Inline cells -->
+                <td>
+                    <span th:text="*{date}" th:id="'date-span-' + *{id}"></span>
+                    <input type="date" th:id="'date-input-' + *{id}" th:value="*{date}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="*{rstNo}" th:id="'rstNo-span-' + *{id}"></span>
+                    <input type="text" th:id="'rstNo-input-' + *{id}" th:value="*{rstNo}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="*{warehouse}" th:id="'warehouse-span-' + *{id}"></span>
+                    <input type="text" th:id="'warehouse-input-' + *{id}" th:value="*{warehouse}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="*{stockistName}" th:id="'stockistName-span-' + *{id}"></span>
+                    <input type="text" th:id="'stockistName-input-' + *{id}" th:value="*{stockistName}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="*{mobile}" th:id="'mobile-span-' + *{id}"></span>
+                    <input type="text" th:id="'mobile-input-' + *{id}" th:value="*{mobile}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="*{commodity}" th:id="'commodity-span-' + *{id}"></span>
+                    <select th:id="'commodity-input-' + *{id}" style="display:none;">
+                        <option value="Wheat" th:selected="*{commodity == 'Wheat'}">Wheat</option>
+                        <option value="Maize" th:selected="*{commodity == 'Maize'}">Maize</option>
+                        <option value="Paddy" th:selected="*{commodity == 'Paddy'}">Paddy</option>
+                    </select>
+                </td>
+                <td>
+                    <span th:text="*{quantity}" th:id="'quantity-span-' + *{id}"></span>
+                    <input type="number" th:id="'quantity-input-' + *{id}" th:value="*{quantity}" step="0.01"
+                           style="display:none;" th:attr="oninput='autoCalculate(' + *{id} + ')'" />
+                </td>
+                <td>
+                    <span th:text="*{reduction}" th:id="'reduction-span-' + *{id}"></span>
+                    <input type="number" th:id="'reduction-input-' + *{id}" th:value="*{reduction}" step="0.01"
+                           style="display:none;" th:attr="oninput='autoCalculate(' + *{id} + ')'" />
+                </td>
+                <td>
+                    <span th:text="*{netQty}" th:id="'netQty-span-' + *{id}"></span>
+                    <input type="number" th:id="'netQty-input-' + *{id}" th:value="*{netQty}" step="0.01" style="display:none;" readonly>
+                </td>
+                <td>
+                    <span th:text="*{rate}" th:id="'rate-span-' + *{id}"></span>
+                    <input type="number" th:id="'rate-input-' + *{id}" th:value="*{rate}" step="0.01"
+                           style="display:none;" th:attr="oninput='autoCalculate(' + *{id} + ')'" />
+                </td>
+                <td>
+                    <span th:text="*{cost}" th:id="'cost-span-' + *{id}"></span>
+                    <input type="number" th:id="'cost-input-' + *{id}" th:value="*{cost}" step="0.01" style="display:none;" readonly>
+                </td>
+                <td>
+                    <span th:text="*{handling}" th:id="'handling-span-' + *{id}"></span>
+                    <input type="number" th:id="'handling-input-' + *{id}" th:value="*{handling}" step="0.01"
+                           style="display:none;" th:attr="oninput='autoCalculate(' + *{id} + ')'" />
+                </td>
+                <td>
+                    <span th:text="*{totalCost}" th:id="'totalCost-span-' + *{id}"></span>
+                    <input type="number" th:id="'totalCost-input-' + *{id}" th:value="*{totalCost}" step="0.01" style="display:none;" readonly>
+                </td>
+                <td>
+                    <span th:text="*{quality}" th:id="'quality-span-' + *{id}"></span>
+                    <select th:id="'quality-input-' + *{id}" style="display:none;">
+                        <option value="Good" th:selected="*{quality == 'Good'}">Good</option>
+                        <option value="BD" th:selected="*{quality == 'BD'}">BD</option>
+                    </select>
+                </td>
+                <td>
+                    <span th:text="*{kindOfStock}" th:id="'kindOfStock-span-' + *{id}"></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </form>
+
+    <a href="/stockist" style="display:block;margin-top:24px;text-align:left;">&larr; Back to Stockist Dashboard</a>
+</div>
+
+<script>
+    // Inline editing JS
+    function enableEdit(id) {
+        document.getElementById('editBtn-' + id).style.display = 'none';
+        document.getElementById('saveBtn-' + id).style.display = '';
+        document.getElementById('cancelBtn-' + id).style.display = '';
+        ['date','rstNo','warehouse','stockistName','mobile','commodity','quantity','reduction','netQty','rate','cost','handling','totalCost','quality'].forEach(function(field){
+            document.getElementById(field + '-span-' + id).style.display = 'none';
+            document.getElementById(field + '-input-' + id).style.display = '';
+        });
+    }
+    function cancelEdit(id) {
+        document.getElementById('editBtn-' + id).style.display = '';
+        document.getElementById('saveBtn-' + id).style.display = 'none';
+        document.getElementById('cancelBtn-' + id).style.display = 'none';
+        ['date','rstNo','warehouse','stockistName','mobile','commodity','quantity','reduction','netQty','rate','cost','handling','totalCost','quality'].forEach(function(field){
+            document.getElementById(field + '-span-' + id).style.display = '';
+            document.getElementById(field + '-input-' + id).style.display = 'none';
+        });
+    }
+    function saveRow(id) {
+        let data = {
+            id: id,
+            date: document.getElementById('date-input-' + id).value,
+            rstNo: document.getElementById('rstNo-input-' + id).value,
+            warehouse: document.getElementById('warehouse-input-' + id).value,
+            stockistName: document.getElementById('stockistName-input-' + id).value,
+            mobile: document.getElementById('mobile-input-' + id).value,
+            commodity: document.getElementById('commodity-input-' + id).value,
+            quantity: document.getElementById('quantity-input-' + id).value,
+            reduction: document.getElementById('reduction-input-' + id).value,
+            netQty: document.getElementById('netQty-input-' + id).value,
+            rate: document.getElementById('rate-input-' + id).value,
+            cost: document.getElementById('cost-input-' + id).value,
+            handling: document.getElementById('handling-input-' + id).value,
+            totalCost: document.getElementById('totalCost-input-' + id).value,
+            quality: document.getElementById('quality-input-' + id).value
+        };
+        fetch('/stockist/update-stockdata-inline', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+            .then(res => res.json())
+            .then(resp => {
+                if (resp.status === "ok") {
+                    Object.keys(data).forEach(function(field){
+                        if(field === "id") return;
+                        document.getElementById(field + '-span-' + id).textContent = data[field];
+                        document.getElementById(field + '-input-' + id).style.display = 'none';
+                        document.getElementById(field + '-span-' + id).style.display = '';
+                    });
+                    document.getElementById('editBtn-' + id).style.display = '';
+                    document.getElementById('saveBtn-' + id).style.display = 'none';
+                    document.getElementById('cancelBtn-' + id).style.display = 'none';
+                } else {
+                    alert("Error: " + resp.msg);
+                }
+            });
+    }
+
+    // Auto-calculate logic
+    function autoCalculate(id) {
+        // Get values
+        let qty = parseFloat(document.getElementById('quantity-input-' + id).value) || 0;
+        let reduction = parseFloat(document.getElementById('reduction-input-' + id).value) || 0;
+        let rate = parseFloat(document.getElementById('rate-input-' + id).value) || 0;
+        let handling = parseFloat(document.getElementById('handling-input-' + id).value) || 0;
+
+        // Calculate
+        let netQty = qty - reduction;
+        document.getElementById('netQty-input-' + id).value = netQty.toFixed(2);
+
+        let cost = netQty * rate;
+        document.getElementById('cost-input-' + id).value = cost.toFixed(2);
+
+        let totalCost = cost + handling;
+        document.getElementById('totalCost-input-' + id).value = totalCost.toFixed(2);
+    }
+
+    // Placeholder handlers for export/import/bulk delete
+    function exportExcel() { window.location.href = '/stockist/export-excel'; }
+    function exportPdf() { window.location.href = '/stockist/export-pdf'; }
+    function importExcel(input) {
+        if(input.files.length === 0) return;
+        let formData = new FormData();
+        formData.append('file', input.files[0]);
+        fetch('/stockist/import-excel', {method: 'POST', body: formData})
+            .then(() => window.location.reload());
+    }
+    function bulkDelete() {
+        let checked = Array.from(document.querySelectorAll('input[name="selectedIds"]:checked')).map(cb => cb.value);
+        if (checked.length === 0) { alert("Select at least one row to delete."); return; }
+        if (!confirm("Delete selected records?")) return;
+        fetch('/stockist/delete-stockdata', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(checked)
+        }).then(res => window.location.reload());
+    }
+</script>
+</body>
+</html>
+

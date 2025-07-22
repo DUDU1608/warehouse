@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>My Margin Paid</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f8fd; }
+        .container { max-width: 820px; margin: 42px auto; background: #fff; border-radius: 14px; box-shadow: 0 2px 20px #b6c2e7; padding: 32px; }
+        h2 { color: #274c97; text-align: center; margin-bottom: 28px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #dde3ef; padding: 8px 6px; text-align: center; }
+        th { background: #e7edf8; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .error { color: #c0392b; text-align: center; margin-bottom: 18px; font-weight: 600;}
+        .back-btn { margin-top: 24px; display: block; color: #274c97; text-decoration: none; font-weight: 500; }
+        .back-btn:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>My Margin Paid</h2>
+    <div th:if="${error}" class="error" th:text="${error}"></div>
+
+    <table th:if="${margins != null and !margins.isEmpty()}">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Stockist Name</th>
+            <th>Warehouse</th>
+            <th>Commodity</th>
+            <th>Amount</th>
+            <th>Reference</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${margins}">
+            <td th:text="${m.date}"></td>
+            <td th:text="${m.stockistName}"></td>
+            <td th:text="${m.warehouse}"></td>
+            <td th:text="${m.commodity}"></td>
+            <td th:text="${m.amount}"></td>
+            <td th:text="${m.reference}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div th:if="${margins == null or margins.isEmpty()}" style="text-align:center; color:#b3b3b3;">
+        No margin data found.
+    </div>
+    <a class="back-btn" href="/user/stockist">&larr; Back to Dashboard</a>
+</div>
+</body>
+</html>

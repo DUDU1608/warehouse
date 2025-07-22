@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Due</title>
+    <style>
+        body { background: #f4f6fa; font-family: 'Segoe UI', Arial, sans-serif; }
+        .container { max-width: 470px; margin: 60px auto; background: #fff; border-radius: 14px; box-shadow: 0 2px 24px #c8d0e7; padding: 32px 28px;}
+        h2 { text-align: center; color: #274c97; margin-bottom: 22px; }
+        form { display: flex; flex-direction: column; gap: 18px; }
+        label { font-weight: 600; color: #23406e; margin-bottom: 4px;}
+        select, input[type="text"], input[type="number"] {
+            padding: 8px 12px; border-radius: 6px; border: 1px solid #c6d0e7; font-size: 1.08rem;
+        }
+        .result { margin-top: 30px; font-size: 1.13rem; font-weight: bold; color: #28526e; text-align: center; }
+        .back-btn {
+            margin-top:28px; background:#e8eef7; color:#23406e; padding:9px 22px; border-radius:8px; text-decoration:none;
+            border:1px solid #d1dbe7; font-weight:500; display: block; width: fit-content; margin-left: auto; margin-right: auto;
+        }
+        button[type="submit"] {
+            background: #274c97; color: #fff; border: none; border-radius: 7px; padding: 10px 0; font-size: 1.07rem; font-weight: 600;
+            cursor: pointer; margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Check Payment Due</h2>
+    <form method="post" action="/seller/payment-due">
+        <div>
+            <label for="name">Seller Name</label>
+            <select id="name" name="name" required>
+                <option value="">--Select Seller--</option>
+                <th:block th:each="seller : ${sellers}">
+                    <option th:value="${seller.name}" th:text="${seller.name}"
+                            th:selected="${selectedName} == ${seller.name}"></option>
+                </th:block>
+            </select>
+        </div>
+        <div>
+            <label for="warehouse">Warehouse</label>
+            <select id="warehouse" name="warehouse" required>
+                <option value="">--Select Warehouse--</option>
+                <th:block th:each="w : ${warehouses}">
+                    <option th:value="${w}" th:text="${w}"
+                            th:selected="${selectedWarehouse} == ${w}"></option>
+                </th:block>
+            </select>
+        </div>
+        <div>
+            <label for="commodity">Commodity</label>
+            <select id="commodity" name="commodity" required>
+                <option value="">--Select Commodity--</option>
+                <th:block th:each="c : ${commodities}">
+                    <option th:value="${c}" th:text="${c}"
+                            th:selected="${selectedCommodity} == ${c}"></option>
+                </th:block>
+            </select>
+        </div>
+        <button type="submit">Check Due</button>
+    </form>
+
+    <div class="result" th:if="${due != null}">
+        <div>Total Purchase: <span th:text="${#numbers.formatDecimal(totalPurchase, 2, 2)}"></span></div>
+        <div>Total Amount Paid: <span th:text="${#numbers.formatDecimal(totalPaid, 2, 2)}"></span></div>
+        <div><b>Payment Due:</b> <span th:text="${#numbers.formatDecimal(due, 2, 2)}"></span></div>
+    </div>
+
+    <a href="/seller" class="back-btn">&larr; Back to Seller Dashboard</a>
+</div>
+</body>
+</html>
+

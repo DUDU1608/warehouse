@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add Stockist</title>
+    <style>
+        body {
+            background: #f4f6fa;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .container {
+            max-width: 410px;
+            margin: 54px auto;
+            background: #fff;
+            padding: 38px 28px 32px 28px;
+            border-radius: 14px;
+            box-shadow: 0 2px 18px #c8d0e7;
+        }
+        h2 {
+            text-align: center;
+            color: #274c97;
+            margin-bottom: 18px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        label {
+            margin-bottom: 4px;
+            color: #22314e;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 11px 10px;
+            border-radius: 7px;
+            border: 1px solid #c0cee7;
+            font-size: 1rem;
+            background: #f9fbfe;
+            margin-bottom: 6px;
+            outline: none;
+            transition: border 0.18s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            border: 1.5px solid #296ad3;
+        }
+        .btn-submit {
+            background: linear-gradient(90deg, #3267d6 0%, #49c0e7 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 13px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: background 0.17s, transform 0.11s;
+        }
+        .btn-submit:hover {
+            background: linear-gradient(90deg, #274c97 0%, #319fc5 100%);
+            transform: translateY(-2px) scale(1.03);
+        }
+        .success-msg {
+            background: #d1f7e2;
+            color: #21764c;
+            border-radius: 7px;
+            text-align: center;
+            margin-bottom: 14px;
+            padding: 9px 0;
+            font-weight: 500;
+            font-size: 1.08rem;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            color: #274c97;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+            color: #22314e;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Add Stockist</h2>
+    <div th:if="${success}" class="success-msg">
+        Stockist added successfully!
+    </div>
+    <form th:action="@{/stockist/add}" th:object="${stockist}" method="post" autocomplete="off">
+        <label for="stockistName">Stockist Name</label>
+        <input type="text" th:field="*{stockistName}" id="stockistName" placeholder="Enter Stockist Name" required>
+
+        <label for="mobile">Mobile</label>
+        <input type="text" th:field="*{mobile}" id="mobile" maxlength="15" placeholder="Enter Mobile Number" required>
+
+        <label for="bankingName">Banking Name</label>
+        <input type="text" th:field="*{bankingName}" id="bankingName" placeholder="Banking Name">
+
+        <label for="accountNumber">Account Number</label>
+        <input type="text" th:field="*{accountNumber}" id="accountNumber" placeholder="Account Number">
+
+        <label for="ifsc">IFSC</label>
+        <input type="text" th:field="*{ifsc}" id="ifsc" placeholder="IFSC Code">
+
+        <label for="bankName">Bank Name</label>
+        <input type="text" th:field="*{bankName}" id="bankName" placeholder="Bank Name">
+
+        <label for="address">Address</label>
+        <input type="text" th:field="*{address}" id="address" placeholder="Address">
+
+        <button type="submit" class="btn-submit">Add Stockist</button>
+    </form>
+    <a href="/stockist" class="back-link">&larr; Back to Stockist Dashboard</a>
+</div>
+</body>
+</html>
+

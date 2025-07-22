@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Warehouse App</title>
+    <style>
+        body { background: #f3f6fa; font-family: 'Segoe UI', Arial, sans-serif;}
+        .container { max-width: 340px; margin: 70px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px #c8d0e7; padding: 32px 26px;}
+        h2 { text-align: center; color: #274c97; margin-bottom: 18px; }
+        label { font-weight: 600; color: #23406e; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin-bottom: 14px; border-radius: 7px; border: 1px solid #c6d0e7; font-size: 1.07rem;}
+        button { background: #274c97; color: #fff; border: none; border-radius: 7px; padding: 10px 0; width: 100%; font-size: 1.06rem; font-weight: 600;}
+        .error { color: #c0392b; text-align: center; margin-top: 8px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>User Login</h2>
+    <form method="post" action="/login">
+        <label for="username">Mobile Number</label>
+        <input type="text" name="username" id="username" placeholder="Enter mobile number" required autofocus>
+
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" value="password" required>
+
+        <button type="submit">Login</button>
+        <div class="error" th:if="${param.error}">Invalid mobile number or password.</div>
+        <div class="error" th:if="${param.logout}">You have been logged out.</div>
+    </form>
+</div>
+</body>
+</html>

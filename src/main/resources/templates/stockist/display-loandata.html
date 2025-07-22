@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Display Loan Data</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fa; }
+        .container { max-width: 96vw; margin: 32px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 20px #b6c2e7; padding: 26px; }
+        h2 { color: #274c97; text-align: center; margin-bottom: 20px; }
+        .actions, .filters { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .filters select, .filters input { padding: 5px; border-radius: 5px; border: 1px solid #a5b2cc; }
+        .actions button { padding: 7px 14px; border-radius: 6px; border: none; background: #274c97; color: #fff; cursor: pointer; }
+        .actions button:hover { background: #143263; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { border: 1px solid #dde3ef; padding: 7px 6px; text-align: center; }
+        th { background: #e7edf8; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .edit-btn, .save-btn, .cancel-btn { background: #2e86c1; color: #fff; border: none; padding: 3px 9px; border-radius: 4px; cursor: pointer; margin: 1px 2px;}
+        .save-btn { background: #27ae60; }
+        .cancel-btn { background: #c0392b; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Loan Data</h2>
+
+    <!-- FILTERS -->
+    <form class="filters" th:action="@{/stockist/display-loandata}" method="get">
+        <input type="text" name="stockistName" th:value="${filterStockistName}" placeholder="Stockist Name">
+        <input type="text" name="warehouse" th:value="${filterWarehouse}" placeholder="Warehouse">
+        <select name="commodity">
+            <option value="">All Commodities</option>
+            <option value="Wheat" th:selected="${filterCommodity == 'Wheat'}">Wheat</option>
+            <option value="Maize" th:selected="${filterCommodity == 'Maize'}">Maize</option>
+            <option value="Paddy" th:selected="${filterCommodity == 'Paddy'}">Paddy</option>
+        </select>
+        <button type="submit">Filter</button>
+    </form>
+
+    <!-- ACTION BUTTONS -->
+    <div class="actions">
+        <button type="button" onclick="bulkDelete()">Delete Selected</button>
+        <button type="button" onclick="window.location.href='/stockist/export-loandata-excel'">Export Excel</button>
+        <button type="button" onclick="window.location.href='/stockist/export-loandata-pdf'">Export PDF</button>
+    </div>
+
+    <!-- LOAN DATA TABLE -->
+    <form id="loandataTableForm">
+        <table>
+            <thead>
+            <tr>
+                <th>Select</th>
+                <th>Edit</th>
+                <th>Date</th>
+                <th>Stockist Name</th>
+                <th>Commodity</th>
+                <th>Warehouse</th>
+                <th>Loan Type</th>
+                <th>Amount</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="l : ${loanDataList}" th:id="'row-' + ${l.id}">
+                <!-- Checkbox -->
+                <td><input type="checkbox" name="selectedIds" th:value="${l.id}"></td>
+                <!-- Edit/Save/Cancel -->
+                <td>
+                    <button type="button" th:id="'editBtn-' + ${l.id}" class="edit-btn" th:onclick="'enableEdit(' + ${l.id} + ')'">Edit</button>
+                    <button type="button" th:id="'saveBtn-' + ${l.id}" class="save-btn" style="display:none;" th:onclick="'saveRow(' + ${l.id} + ')'">Save</button>
+                    <button type="button" th:id="'cancelBtn-' + ${l.id}" class="cancel-btn" style="display:none;" th:onclick="'cancelEdit(' + ${l.id} + ')'">Cancel</button>
+                </td>
+                <td>
+                    <span th:text="${l.date}" th:id="'date-span-' + ${l.id}"></span>
+                    <input type="date" th:id="'date-input-' + ${l.id}" th:value="${l.date}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="${l.stockistName}" th:id="'stockistName-span-' + ${l.id}"></span>
+                    <input type="text" th:id="'stockistName-input-' + ${l.id}" th:value="${l.stockistName}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="${l.commodity}" th:id="'commodity-span-' + ${l.id}"></span>
+                    <select th:id="'commodity-input-' + ${l.id}" style="display:none;">
+                        <option value="Wheat" th:selected="${l.commodity == 'Wheat'}">Wheat</option>
+                        <option value="Maize" th:selected="${l.commodity == 'Maize'}">Maize</option>
+                        <option value="Paddy" th:selected="${l.commodity == 'Paddy'}">Paddy</option>
+                    </select>
+                </td>
+                <td>
+                    <span th:text="${l.warehouse}" th:id="'warehouse-span-' + ${l.id}"></span>
+                    <input type="text" th:id="'warehouse-input-' + ${l.id}" th:value="${l.warehouse}" style="display:none;">
+                </td>
+                <td>
+                    <span th:text="${l.loanType}" th:id="'loanType-span-' + ${l.id}"></span>
+                    <select th:id="'loanType-input-' + ${l.id}" style="display:none;">
+                        <option value="Cash" th:selected="${l.loanType == 'Cash'}">Cash</option>
+                        <option value="Margin" th:selected="${l.loanType == 'Margin'}">Margin</option>
+                    </select>
+                </td>
+                <td>
+                    <span th:text="${l.amount}" th:id="'amount-span-' + ${l.id}"></span>
+                    <input type="number" th:id="'amount-input-' + ${l.id}" th:value="${l.amount}" step="0.01" style="display:none;">
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </form>
+
+    <a href="/stockist" style="display:block;margin-top:24px;text-align:left;">&larr; Back to Stockist Dashboard</a>
+</div>
+
+<script>
+    function enableEdit(id) {
+        document.getElementById('editBtn-' + id).style.display = 'none';
+        document.getElementById('saveBtn-' + id).style.display = '';
+        document.getElementById('cancelBtn-' + id).style.display = '';
+        ['date','stockistName','commodity','warehouse','loanType','amount'].forEach(function(field){
+            document.getElementById(field + '-span-' + id).style.display = 'none';
+            document.getElementById(field + '-input-' + id).style.display = '';
+        });
+    }
+    function cancelEdit(id) {
+        document.getElementById('editBtn-' + id).style.display = '';
+        document.getElementById('saveBtn-' + id).style.display = 'none';
+        document.getElementById('cancelBtn-' + id).style.display = 'none';
+        ['date','stockistName','commodity','warehouse','loanType','amount'].forEach(function(field){
+            document.getElementById(field + '-span-' + id).style.display = '';
+            document.getElementById(field + '-input-' + id).style.display = 'none';
+        });
+    }
+    function saveRow(id) {
+        let data = {
+            id: id,
+            date: document.getElementById('date-input-' + id).value,
+            stockistName: document.getElementById('stockistName-input-' + id).value,
+            commodity: document.getElementById('commodity-input-' + id).value,
+            warehouse: document.getElementById('warehouse-input-' + id).value,
+            loanType: document.getElementById('loanType-input-' + id).value,
+            amount: document.getElementById('amount-input-' + id).value
+        };
+        fetch('/stockist/update-loandata-inline', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+            .then(res => res.json())
+            .then(resp => {
+                if (resp.status === "ok") {
+                    Object.keys(data).forEach(function(field){
+                        if(field === "id") return;
+                        document.getElementById(field + '-span-' + id).textContent = data[field];
+                        document.getElementById(field + '-input-' + id).style.display = 'none';
+                        document.getElementById(field + '-span-' + id).style.display = '';
+                    });
+                    document.getElementById('editBtn-' + id).style.display = '';
+                    document.getElementById('saveBtn-' + id).style.display = 'none';
+                    document.getElementById('cancelBtn-' + id).style.display = 'none';
+                } else {
+                    alert("Error: " + resp.msg);
+                }
+            });
+    }
+
+    function bulkDelete() {
+        let checked = Array.from(document.querySelectorAll('input[name="selectedIds"]:checked')).map(cb => cb.value);
+        if (checked.length === 0) { alert("Select at least one row to delete."); return; }
+        if (!confirm("Delete selected records?")) return;
+        fetch('/stockist/delete-loandata', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(checked)
+        }).then(res => window.location.reload());
+    }
+</script>
+</body>
+</html>
