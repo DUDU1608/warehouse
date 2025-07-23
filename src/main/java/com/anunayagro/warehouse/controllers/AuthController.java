@@ -9,10 +9,5 @@ public class AuthController {
     public String login() {
         return "login"; // This will render src/main/resources/templates/login.html
     }
-
-    @GetMapping("/")
-    public String homeRedirect() {
-        return "redirect:/login"; // Redirect root to login
-    }
 }
 
