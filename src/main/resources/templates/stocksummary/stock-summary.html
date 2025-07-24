@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Stock Summary</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { margin: 30px auto; max-width: 1100px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #bbb; padding: 8px 10px; text-align: right; }
+        th { background: #e5e5e5; }
+        tr.filter-row td { background: #f7f7f7; }
+        tr.total-row { font-weight: bold; background: #f0faf0; }
+        .actions { margin-bottom: 20px; }
+        .actions button, .actions select { margin-right: 8px; }
+        h2 { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Stock Summary</h2>
+    <form class="actions" method="get" th:action="@{/stock-summary}">
+        <label>
+            Warehouse:
+            <select name="warehouse">
+                <option value="">All</option>
+                <option th:each="w : ${warehouses}"
+                        th:value="${w}" th:text="${w}"
+                        th:selected="${selectedWarehouse} == ${w}"></option>
+            </select>
+        </label>
+        <label>
+            Commodity:
+            <select name="commodity">
+                <option value="">All</option>
+                <option th:each="c : ${commodities}"
+                        th:value="${c}" th:text="${c}"
+                        th:selected="${selectedCommodity} == ${c}"></option>
+            </select>
+        </label>
+        <label>
+            Stockist:
+            <select name="stockistName">
+                <option value="">All</option>
+                <option th:each="s : ${stockistNames}"
+                        th:value="${s}" th:text="${s}"
+                        th:selected="${selectedStockistName} == ${s}"></option>
+            </select>
+        </label>
+        <button type="submit">Filter</button>
+        <button type="button" onclick="window.location.href='/stock-summary/export/excel'">Export Excel</button>
+        <button type="button" onclick="window.location.href='/stock-summary/export/pdf'">Export PDF</button>
+    </form>
+
+    <table>
+        <thead>
+        <tr>
+            <th style="text-align:left;">Name of Stockist</th>
+            <th>Company<br>Purchase</th>
+            <th>Self<br>Storage</th>
+            <th>Total<br>Quantity</th>
+            <th>Margin</th>
+            <th>Cash<br>Loan</th>
+            <th>Margin<br>Loan</th>
+            <th>Total<br>Loan</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="dto : ${summaries}">
+            <td th:text="${dto.name}" style="text-align:left;"></td>
+            <td th:text="${#numbers.formatDecimal(dto.companyPurchase,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(dto.selfStorage,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(dto.totalQuantity,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(dto.margin,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(dto.cashLoan,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(dto.marginLoan,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(dto.totalLoan,1,2)}"></td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr class="total-row">
+            <td>Total</td>
+            <td th:text="${#numbers.formatDecimal(sumCompanyPurchase,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(sumSelfStorage,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(sumTotalQuantity,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(sumMargin,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(sumCashLoan,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(sumMarginLoan,1,2)}"></td>
+            <td th:text="${#numbers.formatDecimal(sumTotalLoan,1,2)}"></td>
+        </tr>
+        </tfoot>
+    </table>
+    <br>
+    <form action="" method="get">
+        <button type="submit">Back to Dashboard</button>
+    </form>
+</div>
+</body>
+</html>

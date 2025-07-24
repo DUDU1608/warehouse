@@ -3,6 +3,7 @@ package com.anunayagro.warehouse.repositories;
 import com.anunayagro.warehouse.models.LoanData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,8 +39,15 @@ public interface LoanDataRepository extends JpaRepository<LoanData, Long> {
     // --- This is important for your use case ---
     List<LoanData> findByStockistName(String stockistName);
 
-    @Query("SELECT SUM(l.amount) FROM LoanData l WHERE l.stockistName = :stockistName AND l.loanType = :loanType")
-    Double sumLoanByStockistNameAndLoanType(String stockistName, String loanType);
+    @Query("SELECT SUM(l.amount) FROM LoanData l WHERE l.stockistName = :stockistName AND l.loanType = :loanType"
+            + " AND (:warehouse IS NULL OR l.warehouse = :warehouse)"
+            + " AND (:commodity IS NULL OR l.commodity = :commodity)")
+    Double sumLoanByStockistNameAndLoanTypeFiltered(
+            @Param("stockistName") String stockistName,
+            @Param("loanType") String loanType,
+            @Param("warehouse") String warehouse,
+            @Param("commodity") String commodity
+    );
 
 }
 
