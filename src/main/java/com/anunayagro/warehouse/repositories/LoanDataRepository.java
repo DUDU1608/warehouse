@@ -48,6 +48,7 @@ public interface LoanDataRepository extends JpaRepository<LoanData, Long> {
             @Param("warehouse") String warehouse,
             @Param("commodity") String commodity
     );
-
+    @Query("SELECT SUM(l.amount) FROM LoanData l WHERE l.stockistName = :stockistName AND l.loanType = :loanType")
+    Double sumLoanByStockistNameAndLoanType(@Param("stockistName") String stockistName, @Param("loanType") String loanType);
 }
 

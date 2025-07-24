@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface StockDataRepository extends JpaRepository<StockData, Long> {
 
-    List<Stockist> findByStockistName(String stockistName);
+    List<StockData> findByStockistName(String stockistName);
     List<StockData> findByStockistNameContainingIgnoreCase(String stockistName);
     List<StockData> findByCommodity(String commodity);
     List<StockData> findByWarehouse(String warehouse);
@@ -68,6 +68,14 @@ public interface StockDataRepository extends JpaRepository<StockData, Long> {
 
     @Query("SELECT DISTINCT s.commodity FROM StockData s WHERE s.commodity IS NOT NULL")
     List<String> findDistinctCommodities();
+
+    List<StockData> findByStockistNameAndWarehouseAndCommodity(String stockistName, String warehouse, String commodity);
+    @Query("SELECT SUM(s.netQty) FROM StockData s WHERE s.stockistName = :stockistName AND s.warehouse = :warehouse AND s.commodity = :commodity")
+    Double sumNetQtyByStockistNameAndWarehouseAndCommodity(
+            @Param("stockistName") String stockistName,
+            @Param("warehouse") String warehouse,
+            @Param("commodity") String commodity
+    );
 
 }
 

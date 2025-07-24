@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -34,4 +35,15 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
     // Get all unique warehouse names (for dropdown)
     @Query("SELECT DISTINCT p.warehouse FROM Purchase p")
       List<String> findDistinctWarehouses();
+
+    @Query("SELECT DISTINCT p.commodity FROM Purchase p")
+    List<String> findDistinctCommodities();
+
+    @Query("SELECT DISTINCT p.seller FROM Purchase p")
+    List<String> findDistinctSeller();
+
+    List<Purchase> findBySellerContainingIgnoreCase(String seller);
+
+    List<Purchase> findByDateBetween(LocalDate startDate, LocalDate endDate);
+
 }

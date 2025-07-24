@@ -21,13 +21,12 @@ import java.io.IOException;
 import java.util.List;
 
 @Controller
-@RequestMapping("/stock-summary")
 public class StockSummaryController {
 
     @Autowired
     private StockSummaryService stockSummaryService;
 
-    @GetMapping("")
+    @GetMapping("/stock-summary")
     public String showStockSummary(
             @RequestParam(required = false) String warehouse,
             @RequestParam(required = false) String commodity,
@@ -62,7 +61,7 @@ public class StockSummaryController {
         model.addAttribute("sumMarginLoan", sumMarginLoan);
         model.addAttribute("sumTotalLoan", sumTotalLoan);
 
-        return "stocksummary/stock-summary";
+        return "stock-summary";
     }
 
     // Excel Export

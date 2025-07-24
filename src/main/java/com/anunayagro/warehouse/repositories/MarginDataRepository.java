@@ -24,7 +24,7 @@ public interface MarginDataRepository extends JpaRepository<MarginData, Long> {
 
     @Query("SELECT SUM(m.amount) FROM MarginData m WHERE m.stockistName = :stockistName")
     Double sumMarginByStockistName(String stockistName);
-    @Query("SELECT SUM(m.margin) FROM MarginData m WHERE m.stockistName = :stockistName"
+    @Query("SELECT SUM(m.amount) FROM MarginData m WHERE m.stockistName = :stockistName"
             + " AND (:warehouse IS NULL OR m.warehouse = :warehouse)"
             + " AND (:commodity IS NULL OR m.commodity = :commodity)")
     Double sumMarginByStockistNameFiltered(
