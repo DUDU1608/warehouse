@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Display Balance Stock</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fa;}
+        .container { max-width: 480px; margin: 38px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 20px #b6c2e7; padding: 26px;}
+        h2 { color: #274c97; text-align: center; margin-bottom: 20px; }
+        .form-row { margin-bottom: 16px;}
+        label { font-weight: 600;}
+        select, input[type=text] { width: 100%; padding: 7px; margin-top: 5px; border-radius: 6px; border: 1px solid #b2c5e7;}
+        .btn { background: #296ad3; color: #fff; border: none; padding: 9px 0; border-radius: 8px; width: 100%; font-weight: 600;}
+        .result-table { margin-top: 24px; width: 100%; border-collapse: collapse;}
+        .result-table th, .result-table td { border: 1px solid #dde3ef; padding: 8px; text-align: center;}
+        .result-table th { background: #e7edf8;}
+        .back-link { display:block; margin-top:18px; color:#274c97;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Display Balance Stock</h2>
+    <form th:action="@{/stockist/balance-stock}" method="post">
+        <div class="form-row">
+            <label>Stockist Name:</label>
+            <select name="stockistName" required>
+                <option value="" disabled selected>Select</option>
+                <th:block th:each="s : ${stockists}">
+                    <option th:value="${s}" th:text="${s}" th:selected="${stockistName == s}"></option>
+                </th:block>
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Warehouse:</label>
+            <select name="warehouse" required>
+                <option value="" disabled selected>Select</option>
+                <th:block th:each="w : ${warehouses}">
+                    <option th:value="${w}" th:text="${w}" th:selected="${warehouse == w}"></option>
+                </th:block>
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Commodity:</label>
+            <select name="commodity" required>
+                <option value="" disabled selected>Select</option>
+                <th:block th:each="c : ${commodities}">
+                    <option th:value="${c}" th:text="${c}" th:selected="${commodity == c}"></option>
+                </th:block>
+            </select>
+        </div>
+        <div class="form-row">
+            <label>Quality:</label>
+            <select name="quality" required>
+                <option value="" disabled selected>Select</option>
+                <th:block th:each="q : ${qualities}">
+                    <option th:value="${q}" th:text="${q}" th:selected="${quality == q}"></option>
+                </th:block>
+            </select>
+        </div>
+        <button type="submit" class="btn">Display Balance Stock</button>
+    </form>
+    <a href="/stockist" class="back-link">&larr; Back to Stockist Dashboard</a>
+
+    <div th:if="${result}">
+        <table class="result-table">
+            <thead>
+            <tr>
+                <th>Stockist Name</th>
+                <th>Warehouse</th>
+                <th>Commodity</th>
+                <th>Quality</th>
+                <th>Total Stock Stored</th>
+                <th>Stock Exit</th>
+                <th>Balance Stock</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td th:text="${stockistName}"></td>
+                <td th:text="${warehouse}"></td>
+                <td th:text="${commodity}"></td>
+                <td th:text="${quality}"></td>
+                <td th:text="${totalStock}"></td>
+                <td th:text="${totalExit}"></td>
+                <td th:text="${balanceStock}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

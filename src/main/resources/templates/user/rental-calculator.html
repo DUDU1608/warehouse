@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>User Rental Calculator</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fa;}
+        .container { max-width: 600px; margin: 36px auto; background: #fff; padding: 30px 22px; border-radius: 13px; box-shadow: 0 2px 16px #b6c2e7;}
+        h2 { color: #2a4687; text-align: center; margin-bottom: 20px;}
+        label { font-weight: 600; margin-top: 12px; display: block;}
+        input, select { width: 100%; padding: 8px; border-radius: 7px; border: 1px solid #c5d1e7; margin-bottom: 14px;}
+        .btn { background: #274c97; color: #fff; border: none; border-radius: 7px; padding: 10px 0; width: 100%; font-size: 1.06rem; font-weight: 600; cursor:pointer;}
+        .details-table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+        .details-table th, .details-table td { border: 1px solid #c5d1e7; padding: 6px 8px; text-align: center; }
+        .details-table th { background: #f1f5fb;}
+        .export-btn { margin: 6px 10px 6px 0; background:#274c97; color:#fff; border:none; border-radius:5px; padding:5px 16px;}
+        .summary-table { width: 100%; margin: 18px 0 8px 0; border-collapse: collapse;}
+        .summary-table th, .summary-table td { border: 1px solid #c5d1e7; padding: 7px 10px; text-align: center;}
+        .summary-table th { background: #f1f5fb;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Warehouse Rental Calculator</h2>
+    <form id="rentalForm" onsubmit="return false;">
+        <label>Stockist Name</label>
+        <input type="text" id="stockistName" name="stockistName" th:value="${stockistName}" readonly required>
+
+        <label>Warehouse</label>
+        <input list="warehouseList" id="warehouse" name="warehouse" required>
+        <datalist id="warehouseList">
+            <option th:each="w : ${warehouses}" th:value="${w}"></option>
+        </datalist>
+
+        <label>Commodity</label>
+        <select id="commodity" name="commodity" required>
+            <option value="Wheat">Wheat</option>
+            <option value="Maize">Maize</option>
+            <option value="Paddy">Paddy</option>
+        </select>
+
+        <label>Upto Date</label>
+        <input type="date" id="uptoDate" name="uptoDate" required>
+
+        <button class="btn" onclick="calculateRental()">Calculate Rental</button>
+    </form>
+
+    <!-- SUMMARY TABLE -->
+    <table id="summaryTable" class="summary-table" style="display:none;">
+        <thead>
+        <tr>
+            <th>Stockist Name</th>
+            <th>Warehouse</th>
+            <th>Commodity</th>
+            <th>Rental (₹)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr id="summaryRow"></tr>
+        </tbody>
+    </table>
+
+    <!-- Export buttons (visible after calculation) -->
+    <div id="exportBtnRow" style="display:none; margin-bottom: 10px;">
+        <button class="export-btn" onclick="exportDetails('excel')">Export Excel</button>
+        <button class="export-btn" onclick="exportDetails('pdf')">Export PDF</button>
+        <button class="btn" style="width:auto; margin-left:20px;" id="showDetailsBtn" onclick="showDetails()">Show Details</button>
+    </div>
+
+    <div id="detailsDiv" style="display:none;">
+        <table class="details-table" id="detailsTable"></table>
+    </div>
+</div>
+<script>
+    let rentalDetails = [];
+    let lastParams = {};
+
+    function calculateRental() {
+        let stockistName = document.getElementById("stockistName").value;
+        let warehouse = document.getElementById("warehouse").value;
+        let commodity = document.getElementById("commodity").value;
+        let uptoDate = document.getElementById("uptoDate").value;
+        if(!stockistName || !warehouse || !commodity || !uptoDate) { alert("Fill all fields!"); return; }
+
+        // Save params for export
+        lastParams = {stockistName, warehouse, commodity, uptoDate};
+
+        fetch('/user/rental-calculator/calculate', {
+            method: "POST",
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `stockistName=${encodeURIComponent(stockistName)}&warehouse=${encodeURIComponent(warehouse)}&commodity=${commodity}&uptoDate=${uptoDate}`
+        })
+            .then(res => res.json())
+            .then(resp => {
+                let sum = resp.summary || {};
+                rentalDetails = resp.details || [];
+
+                // Fill summary table
+                let tbl = document.getElementById("summaryTable");
+                let row = document.getElementById("summaryRow");
+                row.innerHTML = `
+                <td>${sum.stockistName || ''}</td>
+                <td>${sum.warehouse || ''}</td>
+                <td>${sum.commodity || ''}</td>
+                <td>${(sum.rental || 0).toFixed(2)}</td>
+            `;
+                tbl.style.display = '';
+                document.getElementById("exportBtnRow").style.display = '';
+                document.getElementById("detailsDiv").style.display = 'none';
+            });
+    }
+
+    function showDetails() {
+        let tbl = document.getElementById("detailsTable");
+        tbl.innerHTML = "";
+        let header = "<tr><th>Date</th><th>Total Stored (kg)</th><th>Exit (kg)</th><th>Net Stock (kg)</th><th>Rental (₹)</th></tr>";
+        tbl.insertAdjacentHTML('beforeend', header);
+        rentalDetails.forEach(row => {
+            tbl.insertAdjacentHTML('beforeend',
+                `<tr><td>${row.date}</td><td>${row.stored}</td><td>${row.exited}</td><td>${row.netStock}</td><td>${row.rental.toFixed(2)}</td></tr>`);
+        });
+        document.getElementById("detailsDiv").style.display = '';
+    }
+
+    // Export logic: download as file using GET and blob
+
+</script>
+</body>
+</html>

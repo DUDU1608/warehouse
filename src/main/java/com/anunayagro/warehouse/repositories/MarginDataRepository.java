@@ -33,4 +33,11 @@ public interface MarginDataRepository extends JpaRepository<MarginData, Long> {
             @Param("commodity") String commodity
     );
 
+    @Query("SELECT COALESCE(SUM(m.amount),0) FROM MarginData m WHERE m.stockistName=:stockistName AND m.commodity=:commodity AND m.warehouse=:warehouse")
+    Double amount(@Param("stockistName") String stockistName,
+                         @Param("commodity") String commodity,
+                         @Param("warehouse") String warehouse);
+    @Query("SELECT SUM(m.amount) FROM MarginData m WHERE m.stockistName = :stockistName AND m.warehouse = :warehouse AND m.commodity = :commodity")
+    Double sumAmountByStockistNameAndWarehouseAndCommodity(String stockistName, String warehouse, String commodity);
+
 }

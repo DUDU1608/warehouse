@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add Stock Exit</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f2f4f8;
+            padding: 40px;
+        }
+
+        .form-container {
+            max-width: 700px;
+            margin: auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #274c97;
+            margin-bottom: 30px;
+        }
+
+        form label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        form input, form select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #296ad3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #274c97;
+        }
+    </style>
+    <script>
+        function autoFillStockistData() {
+            const stockistMap = JSON.parse(document.getElementById("stockistMap").value);
+            const selectedName = document.getElementById("stockistName").value;
+            document.getElementById("mobile").value = stockistMap[selectedName] || "";
+        }
+
+        function calculateExitFields() {
+            const qty = parseFloat(document.getElementById("quantity").value) || 0;
+            const rate = parseFloat(document.getElementById("rate").value) || 0;
+            const handling = parseFloat(document.getElementById("handling").value) || 0;
+
+            const reduction = qty * 0.015;
+            const netQty = qty - reduction;
+            const cost = netQty * rate;
+            const totalCost = cost - handling;
+
+            document.getElementById("reduction").value = reduction.toFixed(2);
+            document.getElementById("netQty").value = netQty.toFixed(2);
+            document.getElementById("cost").value = cost.toFixed(2);
+            document.getElementById("totalCost").value = totalCost.toFixed(2);
+        }
+    </script>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Add Stock Exit Data</h2>
+
+    <input type="hidden" id="stockistMap" th:value="${stockistJson}"/>
+
+    <form th:action="@{/stockist/add-stock-exit}" method="post">
+        <div class="form-group">
+            <label>Date:</label>
+            <input type="date" name="date" required />
+        </div>
+
+        <div class="form-group">
+            <label>Warehouse:</label>
+            <input list="warehouseList" name="warehouse" required />
+            <datalist id="warehouseList">
+                <option th:each="w : ${warehouses}" th:value="${w}"></option>
+            </datalist>
+        </div>
+
+        <div class="form-group">
+            <label>Stockist Name:</label>
+            <input list="stockistList" id="stockistName" name="stockistName" onchange="autoFillStockistData()" required />
+            <datalist id="stockistList">
+                <option th:each="s : ${stockists}" th:value="${s.stockistName}"></option>
+            </datalist>
+        </div>
+
+        <div class="form-group">
+            <label>Mobile:</label>
+            <input type="text" id="mobile" name="mobile" readonly />
+        </div>
+
+        <div class="form-group">
+            <label>Commodity:</label>
+            <select name="commodity" required>
+                <option value="Wheat">Wheat</option>
+                <option value="Maize">Maize</option>
+                <option value="Paddy">Paddy</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Quantity (kg):</label>
+            <input type="number" id="quantity" name="quantity" step="0.01" oninput="calculateExitFields()" required />
+        </div>
+
+        <div class="form-group">
+            <label>Reduction (1.5%):</label>
+            <input type="number" id="reduction" name="reduction" step="0.01" readonly />
+        </div>
+
+        <div class="form-group">
+            <label>Net Quantity:</label>
+            <input type="number" id="netQty" name="netQty" step="0.01" readonly />
+        </div>
+
+        <div class="form-group">
+            <label>Rate (₹):</label>
+            <input type="number" id="rate" name="rate" step="0.01" oninput="calculateExitFields()" required />
+        </div>
+
+        <div class="form-group">
+            <label>Cost (₹):</label>
+            <input type="number" id="cost" name="cost" step="0.01" readonly />
+        </div>
+
+        <div class="form-group">
+            <label>Handling Charges (₹):</label>
+            <input type="number" id="handling" name="handling" step="0.01" oninput="calculateExitFields()" required />
+        </div>
+
+        <div class="form-group">
+            <label>Total Cost (₹):</label>
+            <input type="number" id="totalCost" name="totalCost" step="0.01" readonly />
+        </div>
+
+        <div class="form-group">
+            <label>Quality:</label>
+            <select name="quality" required>
+                <option value="Good">Good</option>
+                <option value="BD">BD</option>
+            </select>
+        </div>
+
+        <button type="submit">Submit</button>
+    </form>
+</div>
+
+</body>
+</html>

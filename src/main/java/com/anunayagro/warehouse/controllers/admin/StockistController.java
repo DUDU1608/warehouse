@@ -1,9 +1,6 @@
 package com.anunayagro.warehouse.controllers.admin;
 
-import com.anunayagro.warehouse.models.LoanData;
-import com.anunayagro.warehouse.models.MarginData;
-import com.anunayagro.warehouse.models.StockData;
-import com.anunayagro.warehouse.models.Stockist;
+import com.anunayagro.warehouse.models.*;
 import com.anunayagro.warehouse.repositories.*;
 import com.lowagie.text.Font;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +56,8 @@ public class StockistController {
     @Autowired
     private MarginDataRepository marginDataRepository;
 
+    @Autowired
+    private StockExitRepository stockExitRepository;
 
     @GetMapping("")
     public String stockistHome() {
@@ -605,196 +604,6 @@ public class StockistController {
         document.close();
     }
 
-    @GetMapping("/rental-interest-calculator")
-    public String rentalInterestCalculatorPage() {
-        return "stockist/rental-interest-calculator";
-    }
-    // --- Warehouse Rental Calculation ---
-    @PostMapping("/rental")
-    @ResponseBody
-    public Map<String, Object> calculateRental(
-            @RequestParam String stockist,
-            @RequestParam String warehouse,
-            @RequestParam String commodity,
-            @RequestParam String date) {
-
-        LocalDate uptoDate = LocalDate.parse(date);
-        List<StockData> stocks = stockDataRepository
-                .findByStockistNameAndCommodityAndWarehouseAndDateLessThanEqual(
-                        stockist, commodity, warehouse, uptoDate);
-
-        double dailyRatePerMT = 100.0 / 30.0;
-        double totalRental = 0.0;
-        List<Map<String, Object>> rentalDetails = new ArrayList<>();
-
-        if (stocks.isEmpty()) {
-            Map<String, Object> out = new HashMap<>();
-            out.put("total", 0.0);
-            out.put("details", rentalDetails);
-            return out;
-        }
-
-        // Find earliest stock date, but not after uptoDate
-        LocalDate minDate = stocks.stream()
-                .map(StockData::getDate)
-                .filter(Objects::nonNull)
-                .min(LocalDate::compareTo)
-                .orElse(uptoDate);
-
-        for (LocalDate currentDate = minDate; !currentDate.isAfter(uptoDate); currentDate = currentDate.plusDays(1)) {
-            final LocalDate day = currentDate;
-            double qtyKg = stocks.stream()
-                    .filter(sd -> !sd.getDate().isAfter(day))
-                    .mapToDouble(sd -> sd.getQuantity() == null ? 0 : sd.getQuantity())
-                    .sum();
-            double qtyMT = qtyKg / 1000.0;
-            double dayRental = qtyMT * dailyRatePerMT;
-            totalRental += dayRental;
-
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("date", day.toString());
-            row.put("qtyMT", qtyMT);
-            row.put("dayRental", dayRental);
-            row.put("cumulative", totalRental);
-            rentalDetails.add(row);
-        }
-        Map<String, Object> out = new HashMap<>();
-        out.put("total", totalRental);
-        out.put("details", rentalDetails);
-        return out;
-    }
-
-    // --- Interest Calculation ---
-    @PostMapping("/interest")
-    @ResponseBody
-    public Map<String, Object> calculateInterest(
-            @RequestParam String stockist,
-            @RequestParam String warehouse,
-            @RequestParam String commodity,
-            @RequestParam String date) {
-
-        LocalDate uptoDate = LocalDate.parse(date);
-        List<LoanData> loans = loanDataRepository
-                .findByStockistNameAndWarehouseAndCommodityAndDateLessThanEqual(
-                        stockist, warehouse, commodity, uptoDate);
-        List<MarginData> margins = marginDataRepository
-                .findByStockistNameAndWarehouseAndCommodityAndDateLessThanEqual(
-                        stockist, warehouse, commodity, uptoDate);
-
-        double annual = 13.75 / 100.0, dailyRate = annual / 365.0;
-        double totalInterest = 0.0;
-        List<Map<String, Object>> interestDetails = new ArrayList<>();
-
-        // Find earliest date for calculation
-        LocalDate minDate = Stream.concat(
-                loans.stream().map(LoanData::getDate),
-                margins.stream().map(MarginData::getDate)
-        ).filter(Objects::nonNull).min(LocalDate::compareTo).orElse(uptoDate);
-
-        for (LocalDate currentDate = minDate; !currentDate.isAfter(uptoDate); currentDate = currentDate.plusDays(1)) {
-            final LocalDate day = currentDate;
-            double cashLoan = loans.stream()
-                    .filter(l -> !l.getDate().isAfter(day) && "Cash".equalsIgnoreCase(l.getLoanType()))
-                    .mapToDouble(l -> l.getAmount() == null ? 0 : l.getAmount()).sum();
-            double marginLoan = loans.stream()
-                    .filter(l -> !l.getDate().isAfter(day) && "Margin".equalsIgnoreCase(l.getLoanType()))
-                    .mapToDouble(l -> l.getAmount() == null ? 0 : l.getAmount()).sum();
-            double margin = margins.stream()
-                    .filter(m -> !m.getDate().isAfter(day))
-                    .mapToDouble(m -> m.getAmount() == null ? 0 : m.getAmount()).sum();
-
-            double principal = cashLoan + marginLoan - margin;
-            double dayInterest = principal * dailyRate;
-            totalInterest += dayInterest;
-
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("date", day.toString());
-            row.put("cashLoan", cashLoan);
-            row.put("marginLoan", marginLoan);
-            row.put("margin", margin);
-            row.put("dayInterest", dayInterest);
-            row.put("cumulative", totalInterest);
-            interestDetails.add(row);
-        }
-        Map<String, Object> out = new HashMap<>();
-        out.put("total", totalInterest);
-        out.put("details", interestDetails);
-        return out;
-    }
-
-    // --- EXPORT EXCEL (Rental/Interest) ---
-    @PostMapping("/export-excel")
-    @ResponseBody
-    public void exportExcel(@RequestBody Map<String, Object> payload, HttpServletResponse response) throws IOException {
-        String type = (String) payload.get("type");
-        List<LinkedHashMap<String, Object>> details = (List<LinkedHashMap<String, Object>>) payload.get("details");
-        String[] rentalHeaders = {"Date", "Quantity (MT)", "Day's Rental", "Cumulative"};
-        String[] interestHeaders = {"Date", "Cash Loan", "Margin Loan", "Margin", "Day's Interest", "Cumulative"};
-
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + type + "-details.xlsx\"");
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Details");
-        Row headerRow = sheet.createRow(0);
-        String[] headers = type.equals("rental") ? rentalHeaders : interestHeaders;
-        for (int i = 0; i < headers.length; i++) headerRow.createCell(i).setCellValue(headers[i]);
-        int rowIdx = 1;
-        for (Map<String, Object> row : details) {
-            Row r = sheet.createRow(rowIdx++);
-            int col = 0;
-            if (type.equals("rental")) {
-                r.createCell(col++).setCellValue((String) row.get("date"));
-                r.createCell(col++).setCellValue((Double) row.get("qtyMT"));
-                r.createCell(col++).setCellValue((Double) row.get("dayRental"));
-                r.createCell(col++).setCellValue((Double) row.get("cumulative"));
-            } else {
-                r.createCell(col++).setCellValue((String) row.get("date"));
-                r.createCell(col++).setCellValue((Double) row.get("cashLoan"));
-                r.createCell(col++).setCellValue((Double) row.get("marginLoan"));
-                r.createCell(col++).setCellValue((Double) row.get("margin"));
-                r.createCell(col++).setCellValue((Double) row.get("dayInterest"));
-                r.createCell(col++).setCellValue((Double) row.get("cumulative"));
-            }
-        }
-        workbook.write(response.getOutputStream());
-        workbook.close();
-    }
-
-    // --- EXPORT PDF (Rental/Interest) ---
-    @PostMapping("/export-pdf")
-    @ResponseBody
-    public void exportPdf(@RequestBody Map<String, Object> payload, HttpServletResponse response) throws Exception {
-        String type = (String) payload.get("type");
-        List<LinkedHashMap<String, Object>> details = (List<LinkedHashMap<String, Object>>) payload.get("details");
-        String[] rentalHeaders = {"Date", "Quantity (MT)", "Day's Rental", "Cumulative"};
-        String[] interestHeaders = {"Date", "Cash Loan", "Margin Loan", "Margin", "Day's Interest", "Cumulative"};
-        String[] headers = type.equals("rental") ? rentalHeaders : interestHeaders;
-
-        response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + type + "-details.pdf\"");
-        Document document = new Document();
-        PdfWriter.getInstance(document, response.getOutputStream());
-        document.open();
-        PdfPTable table = new PdfPTable(headers.length);
-        for (String h : headers) table.addCell(h);
-        for (Map<String, Object> row : details) {
-            if (type.equals("rental")) {
-                table.addCell((String) row.get("date"));
-                table.addCell(String.valueOf(row.get("qtyMT")));
-                table.addCell(String.valueOf(row.get("dayRental")));
-                table.addCell(String.valueOf(row.get("cumulative")));
-            } else {
-                table.addCell((String) row.get("date"));
-                table.addCell(String.valueOf(row.get("cashLoan")));
-                table.addCell(String.valueOf(row.get("marginLoan")));
-                table.addCell(String.valueOf(row.get("margin")));
-                table.addCell(String.valueOf(row.get("dayInterest")));
-                table.addCell(String.valueOf(row.get("cumulative")));
-            }
-        }
-        document.add(table);
-        document.close();
-    }
 
     // --- Autocomplete Endpoints (For HTML Datalists) ---
     @GetMapping("/autocomplete/stockists")
@@ -809,6 +618,293 @@ public class StockistController {
     public List<String> autocompleteWarehouses() {
         return stockDataRepository.findAll()
                 .stream().map(StockData::getWarehouse).filter(Objects::nonNull).distinct().toList();
+    }
+
+    @GetMapping("/add-stock-exit")
+    public String showAddStockExitForm(Model model) {
+        model.addAttribute("stockExit", new StockExit());
+        model.addAttribute("warehouses", stockDataRepository.findDistinctWarehouses()); // Assume method exists
+        model.addAttribute("stockists", stockistRepository.findAll());
+        return "stockist/add-stock-exit";
+    }
+    @PostMapping("/add-stock-exit")
+    public String saveStockExit(@ModelAttribute StockExit stockExit) {
+        // Automatically calculate reduction, netQty, cost, totalCost
+        double reduction = stockExit.getQuantity() * 0.015;
+        double netQty = stockExit.getQuantity() - reduction;
+        double cost = netQty * stockExit.getRate();
+        double totalCost = cost - stockExit.getHandling();
+
+        stockExit.setReduction(reduction);
+        stockExit.setNetQty(netQty);
+        stockExit.setCost(cost);
+        stockExit.setTotalCost(totalCost);
+
+        stockExitRepository.save(stockExit);
+        return "redirect:/stockist/display-stock-exit";
+    }
+
+    @GetMapping("/get-mobile")
+    @ResponseBody
+    public String getMobileByStockistName(@RequestParam("name") String name) {
+        Optional<Stockist> stockistOpt = stockistRepository.findByStockistName(name);
+        return stockistOpt.map(Stockist::getMobile).orElse("");
+    }
+
+    @GetMapping("/display-stock-exit")
+    public String displayStockExit(
+            @RequestParam(value = "stockistName", required = false) String stockistName,
+            @RequestParam(value = "commodity", required = false) String commodity,
+            @RequestParam(value = "warehouse", required = false) String warehouse,
+            @RequestParam(value = "quality", required = false) String quality,
+            @RequestParam(value = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(value = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            Model model
+    ) {
+        List<StockExit> list = stockExitRepository.findAll();
+
+        if (stockistName != null && !stockistName.isEmpty())
+            list = list.stream().filter(s -> s.getStockistName() != null && s.getStockistName().toLowerCase().contains(stockistName.toLowerCase())).collect(Collectors.toList());
+        if (commodity != null && !commodity.isEmpty())
+            list = list.stream().filter(s -> commodity.equals(s.getCommodity())).collect(Collectors.toList());
+        if (warehouse != null && !warehouse.isEmpty())
+            list = list.stream().filter(s -> warehouse.equals(s.getWarehouse())).collect(Collectors.toList());
+        if (quality != null && !quality.isEmpty())
+            list = list.stream().filter(s -> quality.equals(s.getQuality())).collect(Collectors.toList());
+        if (fromDate != null)
+            list = list.stream().filter(s -> s.getDate()!=null && !s.getDate().isBefore(fromDate)).collect(Collectors.toList());
+        if (toDate != null)
+            list = list.stream().filter(s -> s.getDate()!=null && !s.getDate().isAfter(toDate)).collect(Collectors.toList());
+
+        model.addAttribute("stockExitList", list);
+        model.addAttribute("stockists", stockistRepository.findAll().stream().map(Stockist::getStockistName).collect(Collectors.toList()));
+        model.addAttribute("warehouses", stockDataRepository.findDistinctWarehouses());
+        model.addAttribute("filterStockistName", stockistName);
+        model.addAttribute("filterWarehouse", warehouse);
+        model.addAttribute("filterCommodity", commodity);
+        model.addAttribute("filterQuality", quality);
+        model.addAttribute("filterDateFrom", fromDate);
+        model.addAttribute("filterDateTo", toDate);
+        return "stockist/display-stock-exit";
+    }
+
+    @PostMapping("/delete-stockexit")
+    @ResponseBody
+    public Map<String, Object> deleteStockExit(@RequestBody List<Long> ids) {
+        Map<String, Object> resp = new HashMap<>();
+        try {
+            stockExitRepository.deleteAllById(ids);
+            resp.put("status", "ok");
+        } catch(Exception ex) {
+            resp.put("status", "error");
+            resp.put("msg", ex.getMessage());
+        }
+        return resp;
+    }
+
+    @PostMapping("/update-stockexit-inline")
+    @ResponseBody
+    public Map<String, Object> updateStockExitInline(@RequestBody StockExit data) {
+        Map<String, Object> resp = new HashMap<>();
+        try {
+            StockExit existing = stockExitRepository.findById(data.getId()).orElseThrow();
+            existing.setDate(data.getDate());
+            existing.setWarehouse(data.getWarehouse());
+            existing.setStockistName(data.getStockistName());
+            existing.setMobile(data.getMobile());
+            existing.setCommodity(data.getCommodity());
+            existing.setQuantity(data.getQuantity());
+            existing.setReduction(data.getReduction());
+            existing.setNetQty(data.getNetQty());
+            existing.setRate(data.getRate());
+            existing.setCost(data.getCost());
+            existing.setHandling(data.getHandling());
+            existing.setTotalCost(data.getTotalCost());
+            existing.setQuality(data.getQuality());
+            stockExitRepository.save(existing);
+            resp.put("status", "ok");
+        } catch (Exception ex) {
+            resp.put("status", "error");
+            resp.put("msg", ex.getMessage());
+        }
+        return resp;
+    }
+
+    @GetMapping("/export-excel-stockexit")
+    public void exportToExcel(HttpServletResponse response) throws IOException {
+        response.setContentType("application/octet-stream");
+        String headerKey = "Content-Disposition";
+        String headerValue = "attachment; filename=stock_exit_data.xlsx";
+        response.setHeader(headerKey, headerValue);
+
+        List<StockExit> exits = stockExitRepository.findAll();
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Stock Exit");
+
+        Row header = sheet.createRow(0);
+        String[] columns = {"Date", "Warehouse", "Stockist", "Mobile", "Commodity", "Quantity", "Reduction", "NetQty", "Rate", "Cost", "Handling", "Total Cost", "Quality"};
+        for (int i = 0; i < columns.length; i++) {
+            header.createCell(i).setCellValue(columns[i]);
+        }
+
+        int rowIdx = 1;
+        for (StockExit s : exits) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(s.getDate().toString());
+            row.createCell(1).setCellValue(s.getWarehouse());
+            row.createCell(2).setCellValue(s.getStockistName());
+            row.createCell(3).setCellValue(s.getMobile());
+            row.createCell(4).setCellValue(s.getCommodity());
+            row.createCell(5).setCellValue(s.getQuantity());
+            row.createCell(6).setCellValue(s.getReduction());
+            row.createCell(7).setCellValue(s.getNetQty());
+            row.createCell(8).setCellValue(s.getRate());
+            row.createCell(9).setCellValue(s.getCost());
+            row.createCell(10).setCellValue(s.getHandling());
+            row.createCell(11).setCellValue(s.getTotalCost());
+            row.createCell(12).setCellValue(s.getQuality());
+        }
+
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
+    @GetMapping("/export-pdf-stockexit")
+    public void exportToPDF(HttpServletResponse response) throws IOException {
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=stock_exit_data.pdf");
+
+        List<StockExit> exits = stockExitRepository.findAll();
+
+        Document document = new Document();
+        PdfWriter.getInstance(document, response.getOutputStream());
+
+        document.open();
+
+        Font font = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+        Paragraph title = new Paragraph("Stock Exit Data", font);
+        title.setAlignment(Paragraph.ALIGN_CENTER);
+        document.add(title);
+        document.add(new Paragraph(" "));
+
+        PdfPTable table = new PdfPTable(13);
+        table.setWidthPercentage(100);
+        String[] headers = {"Date", "Warehouse", "Stockist", "Mobile", "Commodity", "Quantity", "Reduction", "NetQty", "Rate", "Cost", "Handling", "Total Cost", "Quality"};
+        for (String h : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(h));
+            cell.setBackgroundColor(Color.LIGHT_GRAY);
+            table.addCell(cell);
+        }
+
+        for (StockExit s : exits) {
+            table.addCell(s.getDate().toString());
+            table.addCell(s.getWarehouse());
+            table.addCell(s.getStockistName());
+            table.addCell(s.getMobile());
+            table.addCell(s.getCommodity());
+            table.addCell(String.valueOf(s.getQuantity()));
+            table.addCell(String.valueOf(s.getReduction()));
+            table.addCell(String.valueOf(s.getNetQty()));
+            table.addCell(String.valueOf(s.getRate()));
+            table.addCell(String.valueOf(s.getCost()));
+            table.addCell(String.valueOf(s.getHandling()));
+            table.addCell(String.valueOf(s.getTotalCost()));
+            table.addCell(s.getQuality());
+        }
+
+        document.add(table);
+        document.close();
+    }
+
+    @GetMapping("/balance-stock")
+    public String showBalanceStockForm(Model model) {
+        model.addAttribute("stockists", stockistRepository.findAll().stream().map(Stockist::getStockistName).collect(Collectors.toList()));
+        model.addAttribute("warehouses", stockDataRepository.findDistinctWarehouses());
+        model.addAttribute("commodities", List.of("Wheat", "Maize", "Paddy"));
+        model.addAttribute("qualities", List.of("Good", "BD"));
+        return "stockist/balance-stock";
+    }
+
+    @PostMapping("/balance-stock")
+    public String displayBalanceStock(
+            @RequestParam String stockistName,
+            @RequestParam String warehouse,
+            @RequestParam String commodity,
+            @RequestParam String quality,
+            Model model
+    ) {
+        // Get total stock (sum netQty from StockData)
+        Double totalStock = stockDataRepository
+                .findAll().stream()
+                .filter(s -> s.getStockistName().equalsIgnoreCase(stockistName)
+                        && s.getWarehouse().equalsIgnoreCase(warehouse)
+                        && s.getCommodity().equalsIgnoreCase(commodity)
+                        && s.getQuality().equalsIgnoreCase(quality))
+                .mapToDouble(StockData::getNetQty)
+                .sum();
+
+        // Get total exit (sum quantity from StockExit)
+        Double totalExit = stockExitRepository
+                .findAll().stream()
+                .filter(s -> s.getStockistName().equalsIgnoreCase(stockistName)
+                        && s.getWarehouse().equalsIgnoreCase(warehouse)
+                        && s.getCommodity().equalsIgnoreCase(commodity)
+                        && s.getQuality().equalsIgnoreCase(quality))
+                .mapToDouble(StockExit::getQuantity)
+                .sum();
+
+        Double balanceStock = totalStock - totalExit;
+
+        model.addAttribute("result", true);
+        model.addAttribute("stockistName", stockistName);
+        model.addAttribute("warehouse", warehouse);
+        model.addAttribute("commodity", commodity);
+        model.addAttribute("quality", quality);
+        model.addAttribute("totalStock", totalStock);
+        model.addAttribute("totalExit", totalExit);
+        model.addAttribute("balanceStock", balanceStock);
+
+        // For dropdowns
+        model.addAttribute("stockists", stockistRepository.findAll().stream().map(Stockist::getStockistName).collect(Collectors.toList()));
+        model.addAttribute("warehouses", stockDataRepository.findDistinctWarehouses());
+        model.addAttribute("commodities", List.of("Wheat", "Maize", "Paddy"));
+        model.addAttribute("qualities", List.of("Good", "BD"));
+
+        return "stockist/balance-stock";
+    }
+
+    @GetMapping("/display-balance-loan")
+    public String displayBalanceLoanForm(
+            @RequestParam(value="stockistName", required=false) String stockistName,
+            @RequestParam(value="warehouse", required=false) String warehouse,
+            @RequestParam(value="commodity", required=false) String commodity,
+            Model model
+    ) {
+        Double cashLoan = 0.0, marginLoan = 0.0, marginPaid = 0.0, loanDue = 0.0;
+        if (stockistName != null && warehouse != null && commodity != null &&
+                !stockistName.isEmpty() && !warehouse.isEmpty() && !commodity.isEmpty()) {
+
+            cashLoan = loanDataRepository.sumCashLoan(stockistName, commodity, warehouse);
+            marginLoan = loanDataRepository.sumMarginLoan(stockistName, commodity, warehouse);
+            marginPaid = marginDataRepository.amount(stockistName, commodity, warehouse);
+            loanDue = (cashLoan + marginLoan) - marginPaid;
+        }
+        // For dropdowns/autocomplete
+        model.addAttribute("stockists", stockistRepository.findAll().stream().map(s -> s.getStockistName()).collect(Collectors.toList()));
+        model.addAttribute("warehouses", loanDataRepository.findAllDistinctWarehouses());
+        model.addAttribute("commodities", loanDataRepository.findAllDistinctCommodity());
+
+        model.addAttribute("cashLoan", cashLoan);
+        model.addAttribute("marginLoan", marginLoan);
+        model.addAttribute("marginPaid", marginPaid);
+        model.addAttribute("loanDue", loanDue);
+
+        // Also pass back filter params to refill the form
+        model.addAttribute("filterStockistName", stockistName);
+        model.addAttribute("filterWarehouse", warehouse);
+        model.addAttribute("filterCommodity", commodity);
+
+        return "stockist/display-balance-loan";
     }
 
 }

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Interest Calculator</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fa; }
+        .container { max-width: 600px; margin: 36px auto; background: #fff; padding: 30px 22px; border-radius: 13px; box-shadow: 0 2px 16px #b6c2e7;}
+        h2 { color: #2a4687; text-align: center; margin-bottom: 20px;}
+        label { font-weight: 600; margin-top: 12px; display: block;}
+        input, select { width: 100%; padding: 8px; border-radius: 7px; border: 1px solid #c5d1e7; margin-bottom: 14px;}
+        .btn { background: #274c97; color: #fff; border: none; border-radius: 7px; padding: 10px 0; width: 100%; font-size: 1.06rem; font-weight: 600; cursor:pointer;}
+        .details-table { width: 100%; border-collapse: collapse; margin-top: 18px;}
+        .details-table th, .details-table td { border: 1px solid #c5d1e7; padding: 6px 8px; text-align: center; }
+        .details-table th { background: #f1f5fb;}
+        .export-btn { margin: 0 10px 12px 0; background:#274c97; color:#fff; border:none; border-radius:5px; padding:5px 16px;}
+        #detailsDiv {background:#f9fbfe; border-radius:9px; margin-top:20px; box-shadow: 0 2px 12px #d3e0f7;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Warehouse Interest Calculator</h2>
+    <form id="interestForm" onsubmit="return false;">
+        <label>Stockist Name</label>
+        <input
+                type="text"
+                id="stockistName"
+                list="stockistList"
+                name="stockistName"
+                required>
+        <datalist id="stockistList">
+            <option th:each="s : ${stockists}" th:value="${s}"></option>
+        </datalist>
+
+        <label>Warehouse</label>
+        <input list="warehouseList" id="warehouse" required>
+        <datalist id="warehouseList">
+            <option th:each="w : ${warehouses}" th:value="${w}"></option>
+        </datalist>
+
+        <label>Commodity</label>
+        <select id="commodity" required>
+            <option value="Wheat">Wheat</option>
+            <option value="Maize">Maize</option>
+            <option value="Paddy">Paddy</option>
+        </select>
+
+        <label>Upto Date</label>
+        <input type="date" id="uptoDate" required>
+
+        <button class="btn" onclick="calculateInterest()">Calculate Interest</button>
+    </form>
+
+    <!-- Summary Table -->
+    <table id="summaryTable" style="width:100%; margin: 20px 0; border-collapse:collapse; display:none;">
+        <thead>
+        <tr>
+            <th>Stockist Name</th>
+            <th>Warehouse</th>
+            <th>Commodity</th>
+            <th>Margin Loan (₹)</th>
+            <th>Cash Loan (₹)</th>
+            <th>Margin Paid (₹)</th>
+            <th>Interest Due (₹)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr id="summaryRow"></tr>
+        </tbody>
+    </table>
+
+    <button class="btn" id="showDetailsBtn" style="display:none;" onclick="showDetails()">Show Details</button>
+    <div id="detailsDiv" style="display:none;">
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:5px;">
+            <button class="export-btn" onclick="exportDetails('excel')">Export Excel</button>
+            <button class="export-btn" onclick="exportDetails('pdf')">Export PDF</button>
+        </div>
+        <table class="details-table" id="detailsTable"></table>
+    </div>
+</div>
+<script>
+    let interestDetails = [], endpointPrefix = "";
+    // Determine prefix based on path or Thymeleaf mode
+    document.addEventListener("DOMContentLoaded", function() {
+        if (window.location.pathname.includes("/user/")) endpointPrefix = "/user";
+        else endpointPrefix = "/stockist";
+    });
+
+    function calculateInterest() {
+        let stockistName = document.getElementById("stockistName").value;
+        let warehouse = document.getElementById("warehouse").value;
+        let commodity = document.getElementById("commodity").value;
+        let uptoDate = document.getElementById("uptoDate").value;
+        if(!stockistName || !warehouse || !commodity || !uptoDate) { alert("Fill all fields!"); return; }
+        fetch(`${endpointPrefix}/interest-calculator/calculate`, {
+            method: "POST",
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `stockistName=${encodeURIComponent(stockistName)}&warehouse=${encodeURIComponent(warehouse)}&commodity=${commodity}&uptoDate=${uptoDate}`
+        })
+            .then(res => res.json())
+            .then(resp => {
+                let sum = resp.summary;
+                let summaryRow = `<td>${sum.stockistName}</td>
+                                  <td>${sum.warehouse}</td>
+                                  <td>${sum.commodity}</td>
+                                  <td>${(sum.marginLoan||0).toFixed(2)}</td>
+                                  <td>${(sum.cashLoan||0).toFixed(2)}</td>
+                                  <td>${(sum.marginPaid||0).toFixed(2)}</td>
+                                  <td>${(sum.interestDue||0).toFixed(2)}</td>`;
+                document.getElementById("summaryRow").innerHTML = summaryRow;
+                document.getElementById("summaryTable").style.display = '';
+                interestDetails = resp.details;
+                document.getElementById("showDetailsBtn").style.display = interestDetails.length > 0 ? '' : 'none';
+                document.getElementById("detailsDiv").style.display = 'none';
+            });
+    }
+
+    function showDetails() {
+        let tbl = document.getElementById("detailsTable");
+        tbl.innerHTML = "";
+        let header = `<tr>
+            <th>Date</th>
+            <th>Cash Loan (₹)</th>
+            <th>Margin Loan (₹)</th>
+            <th>Margin Paid (₹)</th>
+            <th>Net Loan (₹)</th>
+            <th>Interest (₹)</th>
+            <th>Cumulative (₹)</th>
+        </tr>`;
+        tbl.insertAdjacentHTML('beforeend', header);
+        interestDetails.forEach(row => {
+            tbl.insertAdjacentHTML('beforeend',
+                `<tr>
+                    <td>${row.date}</td>
+                    <td>${(+row.cashLoan).toFixed(2)}</td>
+                    <td>${(+row.marginLoan).toFixed(2)}</td>
+                    <td>${(+row.marginPaid).toFixed(2)}</td>
+                    <td>${(+row.netLoan).toFixed(2)}</td>
+                    <td>${(+row.interest).toFixed(2)}</td>
+                    <td>${(+row.cumulative).toFixed(2)}</td>
+                </tr>`);
+        });
+        document.getElementById("detailsDiv").style.display = '';
+    }
+
+    function exportDetails(format) {
+        if (!interestDetails.length) { alert("No details to export!"); return; }
+        fetch(`${endpointPrefix}/interest-calculator/export-` + format, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ details: interestDetails })
+        })
+            .then(res => res.blob())
+            .then(blob => {
+                let url = window.URL.createObjectURL(blob);
+                let a = document.createElement("a");
+                a.href = url;
+                a.download = "interest-details." + (format === "excel" ? "xlsx" : "pdf");
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+            });
+    }
+</script>
+</body>
+</html>
+

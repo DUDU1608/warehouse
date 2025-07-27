@@ -6,54 +6,61 @@
         body {
             background: #f2f4f8;
             font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
         }
+
         .container {
-            max-width: 420px;
+            max-width: 1080px;
             margin: 60px auto;
             background: #fff;
-            padding: 34px 30px 28px 30px;
+            padding: 40px;
             border-radius: 16px;
             box-shadow: 0 2px 24px #c8d0e7;
-            text-align: center;
         }
+
         h2 {
             color: #274c97;
-            margin-bottom: 26px;
-            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 1.8rem;
         }
+
         .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-top: 18px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
         }
+
         .menu a {
             display: block;
-            width: 100%;
             background: #296ad3;
             color: #fff;
-            padding: 13px 0;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.08rem;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 1.05rem;
             font-weight: 600;
+            text-align: center;
             text-decoration: none;
             box-shadow: 0 1px 8px #c5d2e7;
-            transition: background 0.14s;
+            transition: background 0.2s ease;
         }
+
         .menu a:hover {
             background: #274c97;
         }
+
         .back-btn {
             display: block;
-            margin-top: 28px;
-            color: #274c97;
+            margin: 30px auto 0;
+            width: fit-content;
+            padding: 12px 20px;
             background: #e6eaf2;
+            color: #274c97;
             border: 1px solid #b8c8df;
-            border-radius: 7px;
-            padding: 10px 0;
-            text-decoration: none;
+            border-radius: 8px;
             font-size: 1.02rem;
+            text-decoration: none;
         }
     </style>
 </head>
@@ -61,18 +68,22 @@
 <div class="container">
     <h2>Stockist Module</h2>
     <div class="menu">
-        <a href="/stockist/add" class="dashboard-btn">Add Stockist</a>
+        <a href="/stockist/add">Add Stockist</a>
         <a href="/stockist/add-stockdata">Add Stock Data</a>
         <a href="/stockist/add-loandata">Add Loan Data</a>
         <a href="/stockist/add-margindata">Add Margin Data</a>
+        <a href="/stockist/add-stock-exit">Add Stock Exit Data</a> <!-- ✅ New Button -->
+        <a href="/stockist/display-stock-exit">Display Stock Exit Data</a> <!-- ✅ New Button -->
         <a href="/stockist/list">Display Stockist</a>
         <a href="/stockist/display-stockdata">Display Stock Data</a>
         <a href="/stockist/display-loandata">Display Loan Data</a>
         <a href="/stockist/display-margindata">Display Margin Data</a>
-        <a href="/stockist/rental-interest-calculator">Rental and Interest Calculator</a>
+        <a href="/stockist/rental-calculator">Rental Calculator</a>
+        <a href="/stockist/interest-calculator">Interest Calculator</a>
+        <a href="/stockist/balance-stock">Display Balance Stock</a>
+        <a href="/stockist/display-balance-loan">Display Balance Loan Due</a>
     </div>
     <a href="/" class="back-btn">&larr; Back to Admin Dashboard</a>
 </div>
 </body>
 </html>
-

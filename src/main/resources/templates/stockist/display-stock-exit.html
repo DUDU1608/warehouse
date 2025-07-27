@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Display Stock Exit Data</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fa; }
+        .container { max-width: 98vw; margin: 32px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 20px #b6c2e7; padding: 26px; }
+        h2 { color: #274c97; text-align: center; margin-bottom: 20px; }
+        .actions, .filters { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .filters select, .filters input { padding: 5px; border-radius: 5px; border: 1px solid #a5b2cc; }
+        .actions button { padding: 7px 14px; border-radius: 6px; border: none; background: #274c97; color: #fff; cursor: pointer; }
+        .actions button:hover { background: #143263; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { border: 1px solid #dde3ef; padding: 7px 6px; text-align: center; }
+        th { background: #e7edf8; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .edit-btn, .save-btn, .cancel-btn { background: #2e86c1; color: #fff; border: none; padding: 3px 9px; border-radius: 4px; cursor: pointer; margin: 1px 2px; }
+        .save-btn { background: #27ae60; }
+        .cancel-btn { background: #c0392b; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Stock Exit Data</h2>
+
+    <form class="filters" th:action="@{/stockist/display-stock-exit}" method="get">
+        <input type="text" name="stockistName" th:value="${stockistName}" placeholder="Stockist Name">
+        <input type="text" name="warehouse" th:value="${warehouse}" placeholder="Warehouse">
+
+        <select name="commodity">
+            <option value="">All Commodities</option>
+            <option value="Wheat" th:selected="${commodity == 'Wheat'}">Wheat</option>
+            <option value="Maize" th:selected="${commodity == 'Maize'}">Maize</option>
+            <option value="Paddy" th:selected="${commodity == 'Paddy'}">Paddy</option>
+        </select>
+
+        <select name="quality">
+            <option value="">All Quality</option>
+            <option value="Good" th:selected="${quality == 'Good'}">Good</option>
+            <option value="BD" th:selected="${quality == 'BD'}">BD</option>
+        </select>
+
+        <input type="date" name="fromDate" th:value="${fromDate}">
+        <input type="date" name="toDate" th:value="${toDate}">
+        <button type="submit">Filter</button>
+    </form>
+
+
+    <div class="actions">
+        <button type="button" onclick="bulkDelete()">Delete Selected</button>
+        <button type="button" onclick="exportExcel()">Export Excel</button>
+        <button type="button" onclick="exportPdf()">Export PDF</button>
+        <a href="/stockist" style="margin-left:auto;">&larr; Back to Stockist Dashboard</a>
+        <a href="/stockist/add-stock-exit" style="color:white;background:#2e8b57;padding:8px 14px;border-radius:6px;">Add More Stock Exit</a>
+    </div>
+
+    <form>
+        <table>
+            <thead>
+            <tr>
+                <th>Select</th>
+                <th>Edit</th>
+                <th>Date</th>
+                <th>Warehouse</th>
+                <th>Stockist</th>
+                <th>Mobile</th>
+                <th>Commodity</th>
+                <th>Qty</th>
+                <th>Reduction</th>
+                <th>NetQty</th>
+                <th>Rate</th>
+                <th>Cost</th>
+                <th>Handling</th>
+                <th>Total</th>
+                <th>Quality</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${stockExitList}" th:object="${s}">
+                <td><input type="checkbox" name="selectedIds" th:value="*{id}"></td>
+                <td>
+                    <button type="button" th:id="'editBtn-' + *{id}" class="edit-btn" th:onclick="'enableEdit(' + *{id} + ')'">Edit</button>
+                    <button type="button" th:id="'saveBtn-' + *{id}" class="save-btn" style="display:none;" th:onclick="'saveRow(' + *{id} + ')'">Save</button>
+                    <button type="button" th:id="'cancelBtn-' + *{id}" class="cancel-btn" style="display:none;" th:onclick="'cancelEdit(' + *{id} + ')'">Cancel</button>
+                </td>
+                <td><span th:text="*{date}" th:id="'date-span-' + *{id}"></span><input type="date" th:id="'date-input-' + *{id}" th:value="*{date}" style="display:none;"></td>
+                <td><span th:text="*{warehouse}" th:id="'warehouse-span-' + *{id}"></span><input type="text" th:id="'warehouse-input-' + *{id}" th:value="*{warehouse}" style="display:none;"></td>
+                <td><span th:text="*{stockistName}" th:id="'stockistName-span-' + *{id}"></span><input type="text" th:id="'stockistName-input-' + *{id}" th:value="*{stockistName}" style="display:none;"></td>
+                <td><span th:text="*{mobile}" th:id="'mobile-span-' + *{id}"></span><input type="text" th:id="'mobile-input-' + *{id}" th:value="*{mobile}" style="display:none;"></td>
+                <td><span th:text="*{commodity}" th:id="'commodity-span-' + *{id}"></span><input type="text" th:id="'commodity-input-' + *{id}" th:value="*{commodity}" style="display:none;"></td>
+                <td><span th:text="*{quantity}" th:id="'quantity-span-' + *{id}"></span><input type="number" th:id="'quantity-input-' + *{id}" th:value="*{quantity}" style="display:none;"></td>
+                <td><span th:text="*{reduction}" th:id="'reduction-span-' + *{id}"></span><input type="number" th:id="'reduction-input-' + *{id}" th:value="*{reduction}" style="display:none;"></td>
+                <td><span th:text="*{netQty}" th:id="'netQty-span-' + *{id}"></span><input type="number" th:id="'netQty-input-' + *{id}" th:value="*{netQty}" style="display:none;"></td>
+                <td><span th:text="*{rate}" th:id="'rate-span-' + *{id}"></span><input type="number" th:id="'rate-input-' + *{id}" th:value="*{rate}" style="display:none;"></td>
+                <td><span th:text="*{cost}" th:id="'cost-span-' + *{id}"></span><input type="number" th:id="'cost-input-' + *{id}" th:value="*{cost}" style="display:none;"></td>
+                <td><span th:text="*{handling}" th:id="'handling-span-' + *{id}"></span><input type="number" th:id="'handling-input-' + *{id}" th:value="*{handling}" style="display:none;"></td>
+                <td><span th:text="*{totalCost}" th:id="'totalCost-span-' + *{id}"></span><input type="number" th:id="'totalCost-input-' + *{id}" th:value="*{totalCost}" style="display:none;"></td>
+                <td><span th:text="*{quality}" th:id="'quality-span-' + *{id}"></span><input type="text" th:id="'quality-input-' + *{id}" th:value="*{quality}" style="display:none;"></td>
+            </tr>
+            </tbody>
+        </table>
+    </form>
+</div>
+<script>
+    function enableEdit(id) {
+        ['edit', 'save', 'cancel'].forEach(btn => {
+            document.getElementById(btn + 'Btn-' + id).style.display = btn === 'edit' ? 'none' : '';
+        });
+        ['date','warehouse','stockistName','mobile','commodity','quantity','reduction','netQty','rate','cost','handling','totalCost','quality'].forEach(f => {
+            document.getElementById(f + '-span-' + id).style.display = 'none';
+            document.getElementById(f + '-input-' + id).style.display = '';
+        });
+    }
+    function cancelEdit(id) {
+        ['edit', 'save', 'cancel'].forEach(btn => {
+            document.getElementById(btn + 'Btn-' + id).style.display = btn === 'edit' ? '' : 'none';
+        });
+        ['date','warehouse','stockistName','mobile','commodity','quantity','reduction','netQty','rate','cost','handling','totalCost','quality'].forEach(f => {
+            document.getElementById(f + '-span-' + id).style.display = '';
+            document.getElementById(f + '-input-' + id).style.display = 'none';
+        });
+    }
+    function saveRow(id) {
+        let data = {
+            id: id,
+            date: document.getElementById('date-input-' + id).value,
+            warehouse: document.getElementById('warehouse-input-' + id).value,
+            stockistName: document.getElementById('stockistName-input-' + id).value,
+            mobile: document.getElementById('mobile-input-' + id).value,
+            commodity: document.getElementById('commodity-input-' + id).value,
+            quantity: document.getElementById('quantity-input-' + id).value,
+            reduction: document.getElementById('reduction-input-' + id).value,
+            netQty: document.getElementById('netQty-input-' + id).value,
+            rate: document.getElementById('rate-input-' + id).value,
+            cost: document.getElementById('cost-input-' + id).value,
+            handling: document.getElementById('handling-input-' + id).value,
+            totalCost: document.getElementById('totalCost-input-' + id).value,
+            quality: document.getElementById('quality-input-' + id).value
+        };
+        fetch('/stockist/update-stockexit-inline', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+            .then(res => res.json())
+            .then(resp => {
+                if (resp.status === "ok") {
+                    // update UI, switch back to view mode
+                    Object.keys(data).forEach(function(field){
+                        if(field === "id") return;
+                        document.getElementById(field + '-span-' + id).textContent = data[field];
+                        document.getElementById(field + '-input-' + id).style.display = 'none';
+                        document.getElementById(field + '-span-' + id).style.display = '';
+                    });
+                    document.getElementById('editBtn-' + id).style.display = '';
+                    document.getElementById('saveBtn-' + id).style.display = 'none';
+                    document.getElementById('cancelBtn-' + id).style.display = 'none';
+                } else {
+                    alert("Error: " + resp.msg);
+                }
+            });
+    }
+
+    function bulkDelete() {
+        let checked = Array.from(document.querySelectorAll('input[name="selectedIds"]:checked')).map(cb => cb.value);
+        if (checked.length === 0) { alert("Select at least one row to delete."); return; }
+        if (!confirm("Delete selected records?")) return;
+        fetch('/stockist/delete-stockexit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(checked)
+        }).then(() => window.location.reload());
+    }
+    function exportExcel() { window.location.href = '/stockist/export-excel-stockexit'; }
+    function exportPdf() { window.location.href = '/stockist/export-pdf-stockexit'; }
+</script>
+</body>
+</html>

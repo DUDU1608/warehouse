@@ -77,5 +77,35 @@ public interface StockDataRepository extends JpaRepository<StockData, Long> {
             @Param("commodity") String commodity
     );
 
+    @Query("SELECT SUM(s.quantity) FROM StockData s WHERE s.stockistName=:stockistName AND s.warehouse=:warehouse AND s.commodity=:commodity AND s.date <= :date")
+    Double sumQuantityTillDate(
+            @Param("stockistName") String stockistName,
+            @Param("warehouse") String warehouse,
+            @Param("commodity") String commodity,
+            @Param("date") LocalDate date
+    );
+    @Query("SELECT MIN(s.date) FROM StockData s WHERE s.stockistName=?1 AND s.warehouse=?2 AND s.commodity=?3")
+    LocalDate findEarliestDate(String stockistName, String warehouse, String commodity);
+
+    @Query("SELECT COALESCE(SUM(s.quantity),0) FROM StockData s WHERE s.stockistName=?1 AND s.warehouse=?2 AND s.commodity=?3 AND s.date <= ?4")
+    Double sumQuantityUpto(String stockistName, String warehouse, String commodity, LocalDate date);
+
+    @Query("SELECT COALESCE(SUM(s.netQty), 0) FROM StockData s WHERE s.stockistName = :stockistName AND s.warehouse = :warehouse AND s.commodity = :commodity AND s.kindOfStock = 'transferred'")
+    Double sumCompanyPurchase(@Param("stockistName") String stockistName,
+                              @Param("warehouse") String warehouse,
+                              @Param("commodity") String commodity);
+
+    // Self Storage = kindOfStock = 'self' OR kindOfStock IS NULL/empty
+    @Query("SELECT COALESCE(SUM(s.netQty), 0) FROM StockData s WHERE s.stockistName = :stockistName AND s.warehouse = :warehouse AND s.commodity = :commodity AND (s.kindOfStock IS NULL OR s.kindOfStock = '' OR s.kindOfStock = 'self')")
+    Double sumSelfStorage(@Param("stockistName") String stockistName,
+                          @Param("warehouse") String warehouse,
+                          @Param("commodity") String commodity);
+
+    @Query("SELECT SUM(s.netQty) FROM StockData s WHERE s.stockistName = :stockistName AND s.warehouse = :warehouse AND s.commodity = :commodity AND s.kindOfStock = :kindOfStock")
+    Double sumNetQtyByStockistNameAndWarehouseAndCommodityAndKindOfStock(String stockistName, String warehouse, String commodity, String kindOfStock);
+
+    @Query("SELECT SUM(s.netQty) FROM StockData s WHERE s.stockistName = :stockistName AND s.warehouse = :warehouse AND s.commodity = :commodity AND (s.kindOfStock IN :kinds)")
+    Double sumNetQtyByStockistNameAndWarehouseAndCommodityAndKindOfStockIn(String stockistName, String warehouse, String commodity, List<String> kinds);
+
 }
 

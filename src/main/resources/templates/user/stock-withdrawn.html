@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Stock Withdrawn</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f7fafd;}
+        .container { max-width: 900px; margin: 28px auto; background: #fff; border-radius: 13px; box-shadow: 0 2px 16px #b6c2e7; padding: 28px;}
+        h2 { color: #274c97; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+        th, td { border: 1px solid #dde3ef; padding: 8px; text-align: center; }
+        th { background: #e8eef8; }
+        tr:nth-child(even) { background: #f5f9fd; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Stock Withdrawn (Stock Exits)</h2>
+    <div th:if="${error}" style="color:crimson; font-weight:600; text-align:center; margin-bottom:14px;" th:text="${error}"></div>
+    <table th:if="${stockExitList}">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Warehouse</th>
+            <th>Stockist Name</th>
+            <th>Mobile</th>
+            <th>Commodity</th>
+            <th>Quantity (kg)</th>
+            <th>Reduction (kg)</th>
+            <th>Net Qty (kg)</th>
+            <th>Rate</th>
+            <th>Cost</th>
+            <th>Handling</th>
+            <th>Total Cost</th>
+            <th>Quality</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="exit : ${stockExitList}">
+            <td th:text="${exit.date}"></td>
+            <td th:text="${exit.warehouse}"></td>
+            <td th:text="${exit.stockistName}"></td>
+            <td th:text="${exit.mobile}"></td>
+            <td th:text="${exit.commodity}"></td>
+            <td th:text="${exit.quantity}"></td>
+            <td th:text="${exit.reduction}"></td>
+            <td th:text="${exit.netQty}"></td>
+            <td th:text="${exit.rate}"></td>
+            <td th:text="${exit.cost}"></td>
+            <td th:text="${exit.handling}"></td>
+            <td th:text="${exit.totalCost}"></td>
+            <td th:text="${exit.quality}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(stockExitList)}">
+            <td colspan="13" style="text-align:center; color:gray;">No stock withdrawal records found.</td>
+        </tr>
+        </tbody>
+    </table>
+    <a href="/user" style="display:block; margin-top:22px;">&larr; Back to User Dashboard</a>
+</div>
+</body>
+</html>

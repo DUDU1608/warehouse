@@ -23,6 +23,9 @@ public interface LoanDataRepository extends JpaRepository<LoanData, Long> {
     @Query("SELECT DISTINCT l.warehouse FROM LoanData l")
     List<String> findAllDistinctWarehouses();
 
+    @Query("SELECT DISTINCT l.commodity FROM LoanData l")
+    List<String> findAllDistinctCommodity();
+
     List<LoanData> findByStockistNameAndCommodityAndWarehouse(String stockistName, String commodity, String warehouse);
 
     List<LoanData> findByStockistNameAndCommodityAndWarehouseAndDateLessThanEqual(
@@ -48,7 +51,33 @@ public interface LoanDataRepository extends JpaRepository<LoanData, Long> {
             @Param("warehouse") String warehouse,
             @Param("commodity") String commodity
     );
+
     @Query("SELECT SUM(l.amount) FROM LoanData l WHERE l.stockistName = :stockistName AND l.loanType = :loanType")
     Double sumLoanByStockistNameAndLoanType(@Param("stockistName") String stockistName, @Param("loanType") String loanType);
+
+    // Sum of Cash Loan
+    @Query("SELECT COALESCE(SUM(l.amount),0) FROM LoanData l WHERE l.stockistName=:stockistName AND l.commodity=:commodity AND l.warehouse=:warehouse AND l.loanType='Cash'")
+    Double sumCashLoan(@Param("stockistName") String stockistName,
+                       @Param("commodity") String commodity,
+                       @Param("warehouse") String warehouse);
+
+    // Sum of Margin Loan
+    @Query("SELECT COALESCE(SUM(l.amount),0) FROM LoanData l WHERE l.stockistName=:stockistName AND l.commodity=:commodity AND l.warehouse=:warehouse AND l.loanType='Margin'")
+    Double sumMarginLoan(@Param("stockistName") String stockistName,
+                         @Param("commodity") String commodity,
+                         @Param("warehouse") String warehouse);
+
+    @Query("SELECT SUM(s.netQty) FROM StockData s WHERE s.stockistName=:stockistName AND s.warehouse=:warehouse AND s.commodity=:commodity AND s.date <= :date")
+    Double sumNetQtyTillDate(
+            @Param("stockistName") String stockistName,
+            @Param("warehouse") String warehouse,
+            @Param("commodity") String commodity,
+            @Param("date") LocalDate date
+    );
+
+    @Query("SELECT SUM(l.amount) FROM LoanData l WHERE l.stockistName = :stockistName AND l.warehouse = :warehouse AND l.commodity = :commodity AND l.loanType = :loanType")
+    Double sumAmountByStockistNameAndWarehouseAndCommodityAndLoanType(String stockistName, String warehouse, String commodity, String loanType);
 }
+
+
 

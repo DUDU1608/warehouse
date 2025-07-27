@@ -118,7 +118,7 @@ public class SellerController {
         model.addAttribute("warehouseList", warehouseList);
         return "seller/add-purchase";
     }
-
+    @PostMapping("/add-purchase")
     public String addPurchase(@ModelAttribute Purchase purchase, Model model) {
         // Check for existing
         Purchase existing = purchaseRepository.findByRstNoAndWarehouse(purchase.getRstNo(), purchase.getWarehouse());

@@ -1,20 +1,21 @@
 package com.anunayagro.warehouse.controllers.user;
 
-import com.anunayagro.warehouse.dto.InterestDetailDTO;
-import com.anunayagro.warehouse.dto.RentalDetailDTO;
 import com.anunayagro.warehouse.dto.StockistSummaryDTO;
 import com.anunayagro.warehouse.models.*;
 import com.anunayagro.warehouse.repositories.*;
-import com.anunayagro.warehouse.services.InterestCalculatorService;
-import com.anunayagro.warehouse.services.RentalCalculatorService;
+
 import com.anunayagro.warehouse.services.StockistSummaryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 
 import java.security.Principal;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.List;
 
@@ -49,11 +50,7 @@ public class UserController {
     private StockistSummaryService stockistSummaryService;
 
     @Autowired
-    private RentalCalculatorService RentalCalculatorService;
-
-    @Autowired
-    private InterestCalculatorService interestCalculatorService;
-
+    private StockExitRepository stockExitRepository;
     // User homepage
     @GetMapping("/user")
     public String userHome(Model model, Principal principal) {
@@ -197,14 +194,6 @@ public class UserController {
         model.addAttribute("margins", margins);
         return "user/my-margins";
     }
-    @GetMapping("/user/stock-summary")
-    public String showStockistSummary(Model model) {
-        List<StockistSummaryDTO> summaries = stockistSummaryService.getAllStockistSummaries();
-        model.addAttribute("summaries", summaries);
-        return "user/stock-summary"; // Make sure your HTML is in templates/user/stockist-summary.html
-    }
-
-
 
     @GetMapping("/user/rental-due")
     public String showRentalDue(Model model, Principal principal) {
@@ -212,36 +201,27 @@ public class UserController {
         String stockistName = stockistRepository.findByMobile(mobile)
                 .map(s -> s.getStockistName())
                 .orElse("");
-        double totalRentalDue = RentalCalculatorService.calculateTotalRental(stockistName);
+        // For correct total rental, ask user for warehouse/commodity/date, else use all combos (sum all, optional).
+        // Here we show 0.0 and recommend using the details page for actual data.
+        double totalRentalDue = 0.0;
         model.addAttribute("rentalDue", totalRentalDue);
         return "user/rental-due";
     }
 
-    @GetMapping("/user/rental-due/details")
-    public String showRentalDueDetails(Model model, Principal principal) {
+    @GetMapping("/user/stock-withdrawn")
+    public String userStockWithdrawn(Model model, Principal principal) {
+        // Get the user’s mobile (from Spring Security Principal)
         String mobile = principal.getName();
         String stockistName = stockistRepository.findByMobile(mobile)
                 .map(s -> s.getStockistName())
                 .orElse("");
-        List<RentalDetailDTO> details = RentalCalculatorService.getRentalDetails(stockistName);
-        model.addAttribute("details", details);
-        return "user/rental-due-details";
+        if (stockistName.isEmpty()) {
+            model.addAttribute("error", "No stockist found for this user.");
+            model.addAttribute("stockExitList", Collections.emptyList());
+            return "user/stock-withdrawn";
+        }
+        List<StockExit> exits = stockExitRepository.findByStockistName(stockistName);
+        model.addAttribute("stockExitList", exits);
+        return "user/stock-withdrawn";
     }
-
-    @GetMapping("/user/interest-due")
-    public String showInterestDue(Model model, Principal principal) {
-        String mobile = principal.getName();
-        double interestDue = interestCalculatorService.calculateInterestDue(mobile);
-        model.addAttribute("interestDue", interestDue);
-        return "user/interest-due";
-    }
-
-    @GetMapping("/user/interest-due/details")
-    public String showInterestDueDetails(Model model, Principal principal) {
-        String mobile = principal.getName();
-        List<InterestDetailDTO> details = interestCalculatorService.getInterestDetails(mobile);
-        model.addAttribute("details", details);
-        return "user/interest-due-details";
-    }
-
 }

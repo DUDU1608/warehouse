@@ -1,99 +1,69 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Stockist Summary</title>
+    <title>User Stock Summary</title>
     <style>
-        body {
-            background: #f2f4f8;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 0; padding: 0;
-        }
-        .container {
-            max-width: 1100px;
-            margin: 32px auto;
-            background: #fff;
-            padding: 32px;
-            border-radius: 18px;
-            box-shadow: 0 2px 24px rgba(60,72,95,0.16);
-        }
-        h2 {
-            color: #22314e;
-            margin-bottom: 26px;
-            font-size: 1.7rem;
-            font-weight: 600;
-        }
-        .btn-back {
-            display: inline-block;
-            margin-bottom: 22px;
-            background: linear-gradient(90deg, #274c97 0%, #319fc5 100%);
-            color: #fff;
-            padding: 9px 22px;
-            border: none;
-            border-radius: 7px;
-            font-size: 1rem;
-            text-decoration: none;
-            font-weight: 500;
-            transition: background 0.17s, transform 0.11s;
-        }
-        .btn-back:hover {
-            background: linear-gradient(90deg, #22314e 0%, #274c97 100%);
-            transform: translateY(-2px) scale(1.04);
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 8px;
-        }
-        th, td {
-            border: 1px solid #dde3ef;
-            padding: 10px 7px;
-            text-align: center;
-        }
-        th {
-            background: #e7edf8;
-            font-weight: 600;
-        }
-        tr:nth-child(even) {
-            background: #f8fafc;
-        }
-        tr:hover td {
-            background: #e6f2fa;
-        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fa;}
+        .container { max-width: 700px; margin: 38px auto; background: #fff3cd; padding: 26px 22px; border-radius: 13px; box-shadow: 0 2px 16px #bb66ff;}
+        h2 { color: #2a4687; text-align: center; margin-bottom: 22px;}
+        label { font-weight: 600; margin-top: 12px; display: block;}
+        select, input[type=text] { width: 100%; padding: 8px; border-radius: 7px; border: 1px solid #c5d1e7; margin-bottom: 14px;}
+        .btn { background: #274c97; color: #fff; border: none; border-radius: 7px; padding: 10px 0; width: 100%; font-size: 1.06rem; font-weight: 600; cursor:pointer;}
+        table { width: 90%; border-collapse: collapse; margin-top: 28px;}
+        th, td { border: 1px solid #c26d01; padding: 7px 11px; text-align: center;}
+        th { background: #319fc5; }
     </style>
 </head>
 <body>
 <div class="container">
-    <a href="/user/stockist" class="btn-back">&larr; Back to Dashboard</a>
-    <h2>Stockist Summary</h2>
-    <table>
-        <thead>
-        <tr>
-            <th>Stockist Name</th>
-            <th>Company Purchase</th>
-            <th>Self Storage</th>
-            <th>Total Quantity</th>
-            <th>Margin</th>
-            <th>Cash Loan</th>
-            <th>Margin Loan</th>
-            <th>Total Loan</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="summary : ${summaries}">
-            <td th:text="${summary.stockistName}">Stockist Name</td>
-            <td th:text="${summary.companyPurchase}">0</td>
-            <td th:text="${summary.selfStorage}">0</td>
-            <td th:text="${summary.totalQuantity}">0</td>
-            <td th:text="${summary.margin}">0</td>
-            <td th:text="${summary.cashLoan}">0</td>
-            <td th:text="${summary.marginLoan}">0</td>
-            <td th:text="${summary.totalLoan}">0</td>
-        </tr>
-        <tr th:if="${summaries == null or #lists.isEmpty(summaries)}">
-            <td colspan="8" style="text-align:center; color: #888;">No data found.</td>
-        </tr>
-        </tbody>
-    </table>
+    <h2>Stock Summary</h2>
+    <form method="get" th:action="@{/user/stock-summary}">
+        <label for="warehouse">Warehouse</label>
+        <select id="warehouse" name="warehouse" required>
+            <option value="" th:selected="${warehouse == null or warehouse == ''}">-- Select Warehouse --</option>
+            <option th:each="w : ${warehouses}" th:value="${w}" th:text="${w}" th:selected="${w == warehouse}"></option>
+        </select>
+        <label for="commodity">Commodity</label>
+        <select id="commodity" name="commodity" required>
+            <option value="" th:selected="${commodity == null or commodity == ''}">-- Select Commodity --</option>
+            <option th:each="c : ${commodities}" th:value="${c}" th:text="${c}" th:selected="${c == commodity}"></option>
+        </select>
+        <button type="submit" class="btn">Show Summary</button>
+    </form>
+
+    <div th:if="${summary != null}">
+        <table>
+            <thead>
+            <tr>
+                <th>Stockist Name</th>
+                <th>Company Purchase (kg)</th>
+                <th>Self Storage (kg)</th>
+                <th>Withdrawn (kg)</th>
+                <th>Net Available Stock (kg)</th>
+                <th>Margin Paid (₹)</th>
+                <th>Cash Loan (₹)</th>
+                <th>Margin Loan (₹)</th>
+                <th>Total Loan Due (₹)</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td th:text="${summary.stockistName}"></td>
+                <td th:text="${#numbers.formatDecimal(summary.companyPurchase, 0, 'COMMA', 2, 'POINT')}"></td>
+                <td th:text="${#numbers.formatDecimal(summary.selfStorage, 0, 'COMMA', 2, 'POINT')}"></td>
+                <td th:text="${#numbers.formatDecimal(summary.withdrawn, 0, 'COMMA', 2, 'POINT')}"></td>
+                <td th:text="${#numbers.formatDecimal(summary.netAvailableStock, 0, 'COMMA', 2, 'POINT')}"></td>
+                <td th:text="${#numbers.formatDecimal(summary.marginPaid, 0, 'COMMA', 2, 'POINT')}"></td>
+                <td th:text="${#numbers.formatDecimal(summary.cashLoan, 0, 'COMMA', 2, 'POINT')}"></td>
+                <td th:text="${#numbers.formatDecimal(summary.marginLoan, 0, 'COMMA', 2, 'POINT')}"></td>
+                <td th:text="${#numbers.formatDecimal(summary.totalLoanDue, 0, 'COMMA', 2, 'POINT')}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div th:if="${summary == null}">
+        <p style="color:#a65d2b;text-align:center;margin-top:30px;">No summary to display. Please select warehouse and commodity.</p>
+    </div>
 </div>
 </body>
 </html>

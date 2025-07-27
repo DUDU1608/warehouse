@@ -10,4 +10,3 @@ public class AuthController {
         return "login"; // This will render src/main/resources/templates/login.html
     }
 }
-
